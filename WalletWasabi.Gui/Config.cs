@@ -297,7 +297,7 @@ namespace WalletWasabi.Gui
 			int? privacyLevelSome,
 			int? privacyLevelFine,
 			int? privacyLevelStrong,
-			Money dustThreshold
+			Money dustThreshold,
 			bool? jsonRpcServerEnabled,
 			string jsonRpcUser,
 			string jsonRpcPassword,

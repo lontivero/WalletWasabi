@@ -8,34 +8,47 @@ namespace WalletWasabi.Gui.Models
 {
 	public class CoinsRegistry
 	{
-		private HashSet<SmartCoin> _coins;
-		private object _lock;
+		private HashSet<SmartCoin> Coins { get; }
+		private HashSet<SmartCoin> LatestCoinsSnapshot { get; set; }
+		private bool InvalidateSnapshot { get; set; }
+		private object Lock { get; set; }
 		public event NotifyCollectionChangedEventHandler CollectionChanged;
 
 		public CoinsRegistry()
 		{
-			_coins = new HashSet<SmartCoin>();
-			_lock = new object();
+			Coins = new HashSet<SmartCoin>();
+			LatestCoinsSnapshot = new HashSet<SmartCoin>();
+			InvalidateSnapshot = false;
+			Lock = new object();
 		}
 
 		public CoinsView AsCoinsView()
 		{
-			return new CoinsView(_coins);
+			lock(Lock)
+			{
+				if(InvalidateSnapshot)
+				{
+					LatestCoinsSnapshot = new HashSet<SmartCoin>(Coins);
+					InvalidateSnapshot = false;
+				}
+			}
+			return new CoinsView(LatestCoinsSnapshot);
 		}
 
-		public bool IsEmpty => !_coins.Any();
+		public bool IsEmpty => !AsCoinsView().Any();
 
 		public SmartCoin GetByOutPoint(OutPoint outpoint)
 		{
-			return _coins.FirstOrDefault(x => x.GetOutPoint() == outpoint);
+			return AsCoinsView().FirstOrDefault(x => x.GetOutPoint() == outpoint);
 		}
 
 		public bool TryAdd(SmartCoin coin)
 		{
 			var added = false;
-			lock (_lock)
+			lock (Lock)
 			{
-				added = _coins.Add(coin);
+				added = Coins.Add(coin);
+				InvalidateSnapshot |= added ;
 			}
 
 			if (added)
@@ -49,21 +62,23 @@ namespace WalletWasabi.Gui.Models
 		{
 			var coinsToRemove = AsCoinsView().DescendantOf(coin).ToList();
 			coinsToRemove.Add(coin);
-			lock (_lock)
+			lock (Lock)
 			{
 				foreach (var toRemove in coinsToRemove)
 				{
-					_coins.Remove(coin);
+					Coins.Remove(coin);
 				}
+				InvalidateSnapshot = true;
 			}
 			CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove, coinsToRemove));
 		}
 
 		public void Clear()
 		{
-			lock (_lock)
+			lock (Lock)
 			{
-				_coins.Clear();
+				Coins.Clear();
+				InvalidateSnapshot = true;
 			}
 			CollectionChanged?.Invoke(this, new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Reset));
 		}

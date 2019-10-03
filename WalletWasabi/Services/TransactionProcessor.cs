@@ -65,11 +65,10 @@ namespace WalletWasabi.Services
 				return false; // We do not care about non-witness transactions for other than mempool cleanup.
 			}
 
-			var coinsView = Coins.AsCoinsView();
 			if (!justUpdate && !tx.Transaction.IsCoinBase) // Transactions we already have and processed would be "double spends" but they shouldn't.
 			{
 				var doubleSpends = new List<SmartCoin>();
-				foreach (SmartCoin coin in coinsView)
+				foreach (SmartCoin coin in Coins.AsCoinsView())
 				{
 					var spent = false;
 					foreach (TxoRef spentOutput in coin.SpentOutputs)
@@ -135,7 +134,7 @@ namespace WalletWasabi.Services
 				if (allReceivedInternal)
 				{
 					// It is likely a coinjoin if the diff between receive and sent amount is small and have at least 2 equal outputs.
-					Money spentAmount = coinsView.OutPoints(tx.Transaction.Inputs.ToTxoRefs()).TotalAmount();
+					Money spentAmount = Coins.AsCoinsView().OutPoints(tx.Transaction.Inputs.ToTxoRefs()).TotalAmount();
 					Money receivedAmount = tx.Transaction.Outputs.Where(x => receiveKeys.Any(y => y.P2wpkhScript == x.ScriptPubKey)).Sum(x => x.Value);
 					bool receivedAlmostAsMuchAsSpent = spentAmount.Almost(receivedAmount, Money.Coins(0.005m));
 
@@ -162,7 +161,7 @@ namespace WalletWasabi.Services
 					}
 
 					foundKey.SetKeyState(KeyState.Used, KeyManager);
-					spentOwnCoins ??= coinsView.OutPoints(tx.Transaction.Inputs.ToTxoRefs()).ToList();
+					spentOwnCoins ??= Coins.AsCoinsView().OutPoints(tx.Transaction.Inputs.ToTxoRefs()).ToList();
 					var anonset = tx.Transaction.GetAnonymitySet(i);
 					if (spentOwnCoins.Count != 0)
 					{

@@ -62,11 +62,15 @@ namespace WalletWasabi.Gui.Models
 		{
 			var coinsToRemove = AsCoinsView().DescendantOf(coin).ToList();
 			coinsToRemove.Add(coin);
+			var removedCoins = new List<SmartCoin>();
 			lock (Lock)
 			{
 				foreach (var toRemove in coinsToRemove)
 				{
-					Coins.Remove(coin);
+					if(Coins.Remove(toRemove))
+					{
+						removedCoins.Add(toRemove);
+					}
 				}
 				InvalidateSnapshot = true;
 			}

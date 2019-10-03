@@ -1058,7 +1058,7 @@ namespace WalletWasabi.Tests.IntegrationTests
 
 				res = wallet.BuildTransaction(password, new PaymentIntent(receive, MoneyRequest.CreateAllRemaining(), new SmartLabel("foo")), FeeStrategy.SevenDaysConfirmationTargetStrategy,
 					allowUnconfirmed: true,
-					allowedInputs: availableCoinsView.Select(x => new TxoRef(x.TransactionId, x.Index)).Take(1));
+					allowedInputs: wallet.Coins.AsCoinsView().Select(x => new TxoRef(x.TransactionId, x.Index)).Take(1));
 
 				Assert.Single(res.InnerWalletOutputs);
 				Assert.Empty(res.OuterWalletOutputs);
@@ -1648,7 +1648,7 @@ namespace WalletWasabi.Tests.IntegrationTests
 				Assert.Equal(1, coinsView.Count(x => x.Unavailable && x.SpenderTransactionId == tx1Res.Transaction.GetHash()));
 
 				// There is at least one coin created from the destruction of the first coin
-				Assert.NotEmpty(coinsView.SpentBy(tx0Id));
+				Assert.Contains(coinsView, x => x.SpentOutputs.Any(o => o.TransactionId == tx0Id));
 
 				var totalWallet = coinsView.Available().TotalAmount();
 				Assert.Equal((1 * Money.COIN) - tx1Res.Fee.Satoshi, totalWallet.Satoshi);

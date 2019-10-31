@@ -35,7 +35,6 @@ namespace WalletWasabi.Gui.Controls.WalletExplorer
 		private SortOrder _privacySortDirection;
 		private SortOrder _amountSortDirection;
 		private bool? _selectPrivateCheckBoxState;
-		private bool? _selectNonPrivateCheckBoxState;
 		private GridLength _coinJoinStatusWidth;
 		private SortOrder _clustersSortDirection;
 		private Money _selectedAmount;
@@ -47,7 +46,6 @@ namespace WalletWasabi.Gui.Controls.WalletExplorer
 		public ReactiveCommand<Unit, Unit> DequeueCoin { get; }
 		public ReactiveCommand<Unit, Unit> SelectAllCheckBoxCommand { get; }
 		public ReactiveCommand<Unit, Unit> SelectPrivateCheckBoxCommand { get; }
-		public ReactiveCommand<Unit, Unit> SelectNonPrivateCheckBoxCommand { get; }
 		public ReactiveCommand<Unit, Unit> SortCommand { get; }
 		public ReactiveCommand<Unit, Unit> InitList { get; }
 
@@ -158,12 +156,6 @@ namespace WalletWasabi.Gui.Controls.WalletExplorer
 			}
 		}
 
-		public bool? SelectNonPrivateCheckBoxState
-		{
-			get => _selectNonPrivateCheckBoxState;
-			set => this.RaiseAndSetIfChanged(ref _selectNonPrivateCheckBoxState, value);
-		}
-
 		public GridLength CoinJoinStatusWidth
 		{
 			get => _coinJoinStatusWidth;
@@ -209,7 +201,6 @@ namespace WalletWasabi.Gui.Controls.WalletExplorer
 			// Otherwise they're all selected as null on load.
 			SelectAllCheckBoxState = false;
 			SelectPrivateCheckBoxState = false;
-			SelectNonPrivateCheckBoxState = false;
 
 			var sortChanged = this.WhenValueChanged(@this => MyComparer)
 				.ObserveOn(RxApp.MainThreadScheduler)
@@ -332,25 +323,6 @@ namespace WalletWasabi.Gui.Controls.WalletExplorer
 					}
 				});
 
-			SelectNonPrivateCheckBoxCommand = ReactiveCommand.Create(() =>
-				{
-					switch (SelectNonPrivateCheckBoxState)
-					{
-						case true:
-							SelectAllCoins(true, x => x.AnonymitySet < Global.Config.MixUntilAnonymitySet);
-							break;
-
-						case false:
-							SelectAllCoins(false, x => x.AnonymitySet < Global.Config.MixUntilAnonymitySet);
-							break;
-
-						case null:
-							SelectAllCoins(false, x => x.AnonymitySet < Global.Config.MixUntilAnonymitySet);
-							SelectNonPrivateCheckBoxState = false;
-							break;
-					}
-				});
-
 			InitList = ReactiveCommand.Create(() =>	OnOpen(), outputScheduler: RxApp.MainThreadScheduler);
 
 			InitList.ThrownExceptions.Subscribe(ex => Logger.LogError(ex));
@@ -427,7 +399,6 @@ namespace WalletWasabi.Gui.Controls.WalletExplorer
 		{
 			SelectAllCheckBoxState = GetCheckBoxesSelectedState(x => true);
 			SelectPrivateCheckBoxState = GetCheckBoxesSelectedState(x => x.AnonymitySet >= Global.Config.MixUntilAnonymitySet);
-			SelectNonPrivateCheckBoxState = GetCheckBoxesSelectedState(x => x.AnonymitySet < Global.Config.MixUntilAnonymitySet);
 		}
 
 		private void SetCoinJoinStatusWidth()

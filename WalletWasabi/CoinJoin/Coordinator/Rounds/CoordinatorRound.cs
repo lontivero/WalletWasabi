@@ -1322,6 +1322,17 @@ namespace WalletWasabi.CoinJoin.Coordinator.Rounds
 			return new IndexedNonce(n, extKey.GetPublicKey());
 		}
 
+		public IndexedNonce[] GetNextNoncesForMixingLevels()
+		{
+			var mixingLevels = MixingLevels.Count();
+			var nonces = new IndexedNonce[mixingLevels];
+			for (var i = 0; i < mixingLevels; i++)
+			{
+				nonces[i] = GetNextNonce();
+			}
+			return nonces;
+		}
+
 		public Key GetNextNonceKey(int n)
 		{
 			var extKey = _nonceGenerator.Derive(n, hardened: true);

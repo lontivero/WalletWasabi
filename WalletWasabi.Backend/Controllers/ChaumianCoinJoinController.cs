@@ -75,7 +75,7 @@ namespace WalletWasabi.Backend.Controllers
 				{
 					Phase = round.Phase,
 					SignerPubKeys = round.MixingLevels.SignerPubKeys,
-					RPubKeys = Enumerable.Range(0, 10).Select( _ => round.GetNextNonce()).ToArray(),
+					RPubKeys = round.GetNextNoncesForMixingLevels(),
 					Denomination = round.MixingLevels.GetBaseDenomination(),
 					InputRegistrationTimesout = round.InputRegistrationTimesout,
 					RegisteredPeerCount = round.CountAlices(syncLock: false),

@@ -26,6 +26,8 @@ namespace WalletWasabi.CoinJoin.Coordinator.Rounds
 		public static long RoundCount;
 		private RoundPhase _phase;
 		private CoordinatorRoundStatus _status;
+		private ExtKey _nonceGenerator;
+		private int _lastNonceIndex;
 
 		public CoordinatorRound(IRPCClient rpc, UtxoReferee utxoReferee, CoordinatorRoundConfig config, int adjustedConfirmationTarget, int configuredConfirmationTarget, double configuredConfirmationTargetReductionRate)
 		{
@@ -56,6 +58,8 @@ namespace WalletWasabi.CoinJoin.Coordinator.Rounds
 				RegisteredUnblindedSignatures = new List<UnblindedSignature>();
 				RegisteredUnblindedSignaturesLock = new object();
 
+				_nonceGenerator = new ExtKey();
+				_lastNonceIndex = -1;
 				MixingLevels = new MixingLevelCollection(config.Denomination, new Signer(new Key()));
 				for (int i = 0; i < config.MaximumMixingLevelCount - 1; i++)
 				{
@@ -1308,5 +1312,22 @@ namespace WalletWasabi.CoinJoin.Coordinator.Rounds
 		}
 
 		#endregion Modifiers
+
+		#region Nonce management
+
+		public IndexedNonce GetNextNonce()
+		{
+			var n = Interlocked.Increment(ref _lastNonceIndex);
+			var extKey = _nonceGenerator.Derive(n, hardened: true);
+			return new IndexedNonce(n, extKey.GetPublicKey());
+		}
+
+		public Key GetNextNonceKey(int n)
+		{
+			var extKey = _nonceGenerator.Derive(n, hardened: true);
+			return extKey.PrivateKey;
+		}
+
+		#endregion Nonce management
 	}
 }

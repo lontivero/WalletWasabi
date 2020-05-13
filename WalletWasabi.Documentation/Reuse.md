@@ -15,7 +15,7 @@ Wasabi uses Schnorr blinding signatures that works as follow:
 * The coordinator computes the signature `s' = r - m'x` (where `x` is the coordinator private key) and sends it back to the client.
 * Anyone can verify the signature is valid knowing just `X`, `m` and `s` (unblinded version of `s'`)
 
-Note that in this description the coordinator (signer) knows what `r` it has to use because there is only one user, however this is `R`, and its corresponding `r`, has to be different for every signature because otherwise a malicious user can extract the coordinator private key `x` and that means he can forge signatures and perform a **DoS attack**.
+Note that in this description the coordinator (signer) knows what `r` it has to use because there is only one user, however `R`, and its corresponding `r`, has to be different for every signature because otherwise a malicious user can extract the coordinator private key `x` and that means he can forge signatures and perform a **DoS attack**.
 
 
 ## The solution

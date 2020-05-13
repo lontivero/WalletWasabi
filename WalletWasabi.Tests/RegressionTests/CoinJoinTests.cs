@@ -168,7 +168,7 @@ namespace WalletWasabi.Tests.RegressionTests
 
 			byte[] dummySignature = new byte[65];
 
-			var nullBlindedScript = new BlindedOutputScript(0, uint256.One);
+			var nullBlindedScript = new BlindedOutputWithNonceIndex(0, uint256.One);
 			inputsRequest.BlindedOutputScripts = Enumerable.Range(0, round.MixingLevels.Count() + 1).Select(x => nullBlindedScript);
 			inputsRequest.ChangeOutputAddress = new Key().PubKey.GetAddress(ScriptPubKeyType.Segwit, network);
 			inputsRequest.Inputs = new List<InputProofModel> { new InputProofModel { Input = new OutPoint(uint256.One, 0), Proof = dummySignature } };
@@ -226,7 +226,7 @@ namespace WalletWasabi.Tests.RegressionTests
 			var requester = new Requester();
 			uint256 msg = new uint256(NBitcoin.Crypto.Hashes.SHA256(network.Consensus.ConsensusFactory.CreateTransaction().ToBytes()));
 			var nonce = round.GetNextNonce();
-			var blindedData = new BlindedOutputScript(nonce.N, requester.BlindMessage(msg, nonce.R, round.MixingLevels.GetBaseLevel().SignerKey.PubKey));
+			var blindedData = new BlindedOutputWithNonceIndex(nonce.N, requester.BlindMessage(msg, nonce.R, round.MixingLevels.GetBaseLevel().SignerKey.PubKey));
 			inputsRequest.BlindedOutputScripts = new[] { blindedData };
 			uint256 blindedOutputScriptsHash = new uint256(NBitcoin.Crypto.Hashes.SHA256(blindedData.Message.ToBytes()));
 
@@ -267,7 +267,7 @@ namespace WalletWasabi.Tests.RegressionTests
 			requesters = new[] { requester };
 			msg = network.Consensus.ConsensusFactory.CreateTransaction().GetHash();
 			nonce = round.GetNextNonce(); 
-			blindedData = new BlindedOutputScript(nonce.N, requester.BlindMessage(msg, nonce.R, round.MixingLevels.GetBaseLevel().SignerKey.PubKey));
+			blindedData = new BlindedOutputWithNonceIndex(nonce.N, requester.BlindMessage(msg, nonce.R, round.MixingLevels.GetBaseLevel().SignerKey.PubKey));
 			inputsRequest.BlindedOutputScripts = new[] { blindedData };
 			blindedOutputScriptsHash = new uint256(NBitcoin.Crypto.Hashes.SHA256(blindedData.Message.ToBytes()));
 			proof = key.SignCompact(blindedOutputScriptsHash);
@@ -307,7 +307,7 @@ namespace WalletWasabi.Tests.RegressionTests
 			round = coordinator.GetCurrentInputRegisterableRoundOrDefault();
 			requester = new Requester();
 			nonce = round.GetNextNonce(); 
-			blindedData = new BlindedOutputScript(nonce.N, requester.BlindScript(round.MixingLevels.GetBaseLevel().SignerKey.PubKey, nonce.R, key.ScriptPubKey));
+			blindedData = new BlindedOutputWithNonceIndex(nonce.N, requester.BlindScript(round.MixingLevels.GetBaseLevel().SignerKey.PubKey, nonce.R, key.ScriptPubKey));
 			inputsRequest.BlindedOutputScripts = new[] { blindedData };
 			blindedOutputScriptsHash = new uint256(NBitcoin.Crypto.Hashes.SHA256(blindedData.Message.ToBytes()));
 			proof = key.SignCompact(blindedOutputScriptsHash);
@@ -443,7 +443,7 @@ namespace WalletWasabi.Tests.RegressionTests
 			registeredAddresses = new[] { bitcoinWitPubKeyAddress };
 			Script script = bitcoinWitPubKeyAddress.ScriptPubKey;
 			nonce = round.GetNextNonce();
-			blindedData = new BlindedOutputScript(nonce.N, requester.BlindScript(round.MixingLevels.GetBaseLevel().SignerKey.PubKey, nonce.R, script));
+			blindedData = new BlindedOutputWithNonceIndex(nonce.N, requester.BlindScript(round.MixingLevels.GetBaseLevel().SignerKey.PubKey, nonce.R, script));
 			blindedOutputScriptsHash = new uint256(NBitcoin.Crypto.Hashes.SHA256(blindedData.Message.ToBytes()));
 
 			using (var aliceClient = await AliceClient.CreateNewAsync(roundId, registeredAddresses, signerPubKeys, requesters, network, new Key().PubKey.GetAddress(ScriptPubKeyType.Segwit, network), new[] { blindedData }, new InputProofModel[] { new InputProofModel { Input = coin.Outpoint, Proof = key.SignCompact(blindedOutputScriptsHash) } }, baseUri, null))
@@ -540,9 +540,9 @@ namespace WalletWasabi.Tests.RegressionTests
 			var requester1 = new Requester();
 			var requester2 = new Requester();
 			nonce = round.GetNextNonce();
-			var blinded1 = new BlindedOutputScript(nonce.N, requester1.BlindScript(round.MixingLevels.GetBaseLevel().SignerKey.PubKey, nonce.R, outputAddress1.ScriptPubKey));
+			var blinded1 = new BlindedOutputWithNonceIndex(nonce.N, requester1.BlindScript(round.MixingLevels.GetBaseLevel().SignerKey.PubKey, nonce.R, outputAddress1.ScriptPubKey));
 			uint256 blindedOutputScriptsHash1 = new uint256(NBitcoin.Crypto.Hashes.SHA256(blinded1.Message.ToBytes()));
-			var blinded2 = new BlindedOutputScript(nonce.N, requester2.BlindScript(round.MixingLevels.GetBaseLevel().Signer.Key.PubKey, nonce.R, outputAddress2.ScriptPubKey));
+			var blinded2 = new BlindedOutputWithNonceIndex(nonce.N, requester2.BlindScript(round.MixingLevels.GetBaseLevel().Signer.Key.PubKey, nonce.R, outputAddress2.ScriptPubKey));
 			uint256 blindedOutputScriptsHash2 = new uint256(NBitcoin.Crypto.Hashes.SHA256(blinded2.Message.ToBytes()));
 
 			var input1 = new OutPoint(hash1, index1);
@@ -675,14 +675,14 @@ namespace WalletWasabi.Tests.RegressionTests
 			// We have to 4 participant so, this data structure is for keeping track of
 			// important data for each of the participants in the coinjoin session.
 			var participants = new List<(AliceClient aliceClient,
-										 List<(Requester requester, BitcoinWitPubKeyAddress outputAddress, BlindedOutputScript blindedScript)> outouts,
+										 List<(Requester requester, BitcoinWitPubKeyAddress outputAddress, BlindedOutputWithNonceIndex blindedScript)> outouts,
 										 List<(OutPoint input, byte[] proof, Coin coin, Key key)> inputs)>();
 
 			// INPUTS REGISTRATION PHASE --
 			for (var anosetIdx = 0; anosetIdx < anonymitySet; anosetIdx++)
 			{
 				// Create as many outputs as mixin levels (even when we do not have funds enough)
-				var outputs = new List<(Requester requester, BitcoinWitPubKeyAddress outputAddress, BlindedOutputScript blindedScript)>();
+				var outputs = new List<(Requester requester, BitcoinWitPubKeyAddress outputAddress, BlindedOutputWithNonceIndex blindedScript)>();
 				foreach (var level in round.MixingLevels.Levels)
 				{
 					var requester = new Requester();
@@ -690,7 +690,7 @@ namespace WalletWasabi.Tests.RegressionTests
 					var scriptPubKey = outputsAddress.ScriptPubKey;
 					// We blind the scriptPubKey with a new requester by mixin level
 					var nonce = round.GetNextNonce();
-					var blindedScript = new BlindedOutputScript(nonce.N, requester.BlindScript(level.SignerKey.PubKey, nonce.R, scriptPubKey));
+					var blindedScript = new BlindedOutputWithNonceIndex(nonce.N, requester.BlindScript(level.SignerKey.PubKey, nonce.R, scriptPubKey));
 					outputs.Add((requester, outputsAddress, blindedScript));
 				}
 
@@ -817,7 +817,7 @@ namespace WalletWasabi.Tests.RegressionTests
 			Uri baseUri = new Uri(RegTestFixture.BackendEndPoint);
 			var spentCoins = new List<Coin>();
 			var fundingTxCount = 0;
-			var inputRegistrationUsers = new List<(Requester requester, BlindedOutputScript blinded, BitcoinAddress activeOutputAddress, BitcoinAddress changeOutputAddress, IEnumerable<InputProofModel> inputProofModels, List<(Key key, BitcoinWitPubKeyAddress address, uint256 txHash, Transaction tx, OutPoint input)> userInputData)>();
+			var inputRegistrationUsers = new List<(Requester requester, BlindedOutputWithNonceIndex blinded, BitcoinAddress activeOutputAddress, BitcoinAddress changeOutputAddress, IEnumerable<InputProofModel> inputProofModels, List<(Key key, BitcoinWitPubKeyAddress address, uint256 txHash, Transaction tx, OutPoint input)> userInputData)>();
 			for (int i = 0; i < roundConfig.AnonymitySet; i++)
 			{
 				var userInputData = new List<(Key key, BitcoinWitPubKeyAddress inputAddress, uint256 txHash, Transaction tx, OutPoint input)>();
@@ -826,7 +826,7 @@ namespace WalletWasabi.Tests.RegressionTests
 				CoordinatorRound round = coordinator.GetCurrentInputRegisterableRoundOrDefault();
 				var requester = new Requester();
 				var nonce = round.GetNextNonce();
-				var blinded = new BlindedOutputScript(nonce.N, requester.BlindScript(round.MixingLevels.GetBaseLevel().SignerKey.PubKey, nonce.R, activeOutputAddress.ScriptPubKey));
+				var blinded = new BlindedOutputWithNonceIndex(nonce.N, requester.BlindScript(round.MixingLevels.GetBaseLevel().SignerKey.PubKey, nonce.R, activeOutputAddress.ScriptPubKey));
 				uint256 blindedOutputScriptsHash = new uint256(NBitcoin.Crypto.Hashes.SHA256(blinded.Message.ToBytes()));
 
 				var inputProofModels = new List<InputProofModel>();
@@ -884,7 +884,7 @@ namespace WalletWasabi.Tests.RegressionTests
 			}
 
 			long roundId = 0;
-			var users = new List<(Requester requester, BlindedOutputScript blinded, BitcoinAddress activeOutputAddress, BitcoinAddress changeOutputAddress, IEnumerable<InputProofModel> inputProofModels, List<(Key key, BitcoinWitPubKeyAddress address, uint256 txHash, Transaction tx, OutPoint input)> userInputData, AliceClient aliceClient, UnblindedSignature unblindedSignature)>();
+			var users = new List<(Requester requester, BlindedOutputWithNonceIndex blinded, BitcoinAddress activeOutputAddress, BitcoinAddress changeOutputAddress, IEnumerable<InputProofModel> inputProofModels, List<(Key key, BitcoinWitPubKeyAddress address, uint256 txHash, Transaction tx, OutPoint input)> userInputData, AliceClient aliceClient, UnblindedSignature unblindedSignature)>();
 			for (int i = 0; i < inputRegistrationUsers.Count; i++)
 			{
 				var user = inputRegistrationUsers[i];

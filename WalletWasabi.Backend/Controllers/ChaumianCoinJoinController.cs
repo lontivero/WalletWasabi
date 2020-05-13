@@ -265,7 +265,7 @@ namespace WalletWasabi.Backend.Controllers
 						}
 					}
 
-					var acceptedBlindedOutputScripts = new List<BlindedOutputScript>();
+					var acceptedBlindedOutputScripts = new List<BlindedOutputWithNonceIndex>();
 
 					// Calculate expected networkfee to pay after base denomination.
 					int inputCount = inputs.Count;

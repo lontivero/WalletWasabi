@@ -492,9 +492,9 @@ namespace WalletWasabi.CoinJoin.Client.Clients
 
 				RoundStateResponse state = inputRegistrableRound.State; 
 				PubKey[] signerPubKeys = state.SignerPubKeys.ToArray();
-				IndexedNonce[] numerateNonces = state.RPubKeys.ToArray();
+				PublicNonceWithIndex[] numerateNonces = state.RPubKeys.ToArray();
 				List<Requester> requesters = new List<Requester>();
-				var blindedOutputScriptHashes = new List<BlindedOutputScript>();
+				var blindedOutputScriptHashes = new List<BlindedOutputWithNonceIndex>();
 
 				var registeredAddresses = new List<BitcoinAddress>();
 				for (int i = 0; i < signerPubKeys.Length; i++)
@@ -509,7 +509,9 @@ namespace WalletWasabi.CoinJoin.Client.Clients
 					PubKey signerPubKey = signerPubKeys[i];
 					var outputScriptHash = new uint256(NBitcoin.Crypto.Hashes.SHA256(address.ScriptPubKey.ToBytes()));
 					var requester = new Requester();
-					var blindedOutputScript = new BlindedOutputScript(numerateNonces[i].N, requester.BlindMessage(outputScriptHash, numerateNonces[i].R, signerPubKey));
+					(int n, PubKey R) = (numerateNonces[i].N, numerateNonces[i].R);
+					var blindedMessage = requester.BlindMessage(outputScriptHash, R, signerPubKey);
+					var blindedOutputScript = new BlindedOutputWithNonceIndex(n, blindedMessage);
 					requesters.Add(requester);
 					blindedOutputScriptHashes.Add(blindedOutputScript);
 					registeredAddresses.Add(address);

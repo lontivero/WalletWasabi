@@ -114,7 +114,7 @@ namespace WalletWasabi.CoinJoin.Client.Clients
 			IEnumerable<Requester> requesters,
 			Network network,
 			BitcoinAddress changeOutput,
-			IEnumerable<BlindedOutputScript> blindedOutputScriptHashes,
+			IEnumerable<BlindedOutputWithNonceIndex> blindedOutputScriptHashes,
 			IEnumerable<InputProofModel> inputs,
 			Uri baseUri,
 			EndPoint torSocks5EndPoint)
@@ -128,7 +128,7 @@ namespace WalletWasabi.CoinJoin.Client.Clients
 			IEnumerable<Requester> requesters,
 			Network network,
 			BitcoinAddress changeOutput,
-			IEnumerable<BlindedOutputScript> blindedOutputScriptHashes,
+			IEnumerable<BlindedOutputWithNonceIndex> blindedOutputScriptHashes,
 			IEnumerable<InputProofModel> inputs,
 			Func<Uri> baseUriAction,
 			EndPoint torSocks5EndPoint)

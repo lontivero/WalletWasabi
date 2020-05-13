@@ -1315,17 +1315,17 @@ namespace WalletWasabi.CoinJoin.Coordinator.Rounds
 
 		#region Nonce management
 
-		public IndexedNonce GetNextNonce()
+		public PublicNonceWithIndex GetNextNonce()
 		{
 			var n = Interlocked.Increment(ref _lastNonceIndex);
 			var extKey = _nonceGenerator.Derive(n, hardened: true);
-			return new IndexedNonce(n, extKey.GetPublicKey());
+			return new PublicNonceWithIndex(n, extKey.GetPublicKey());
 		}
 
-		public IndexedNonce[] GetNextNoncesForMixingLevels()
+		public PublicNonceWithIndex[] GetNextNoncesForMixingLevels()
 		{
 			var mixingLevels = MixingLevels.Count();
-			var nonces = new IndexedNonce[mixingLevels];
+			var nonces = new PublicNonceWithIndex[mixingLevels];
 			for (var i = 0; i < mixingLevels; i++)
 			{
 				nonces[i] = GetNextNonce();

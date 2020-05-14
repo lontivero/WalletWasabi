@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security;
 using System.Threading;
 using System.Threading.Tasks;
 using WalletWasabi.BitcoinCore;
@@ -28,6 +29,7 @@ namespace WalletWasabi.CoinJoin.Coordinator.Rounds
 		private CoordinatorRoundStatus _status;
 		private ExtKey _nonceGenerator;
 		private int _lastNonceIndex;
+		private HashSet<int> _alreadyUsedNonceIndexes;
 
 		public CoordinatorRound(IRPCClient rpc, UtxoReferee utxoReferee, CoordinatorRoundConfig config, int adjustedConfirmationTarget, int configuredConfirmationTarget, double configuredConfirmationTargetReductionRate)
 		{
@@ -60,6 +62,8 @@ namespace WalletWasabi.CoinJoin.Coordinator.Rounds
 
 				_nonceGenerator = new ExtKey();
 				_lastNonceIndex = -1;
+				_alreadyUsedNonceIndexes = new HashSet<int>();
+
 				MixingLevels = new MixingLevelCollection(config.Denomination, new Signer(new Key()));
 				for (int i = 0; i < config.MaximumMixingLevelCount - 1; i++)
 				{
@@ -1335,6 +1339,10 @@ namespace WalletWasabi.CoinJoin.Coordinator.Rounds
 
 		public Key GetNextNonceKey(int n)
 		{
+			if (!_alreadyUsedNonceIndexes.Add(n))
+			{
+				throw new SecurityException($"Nonce {n} was already used.");
+			}
 			var extKey = _nonceGenerator.Derive(n, hardened: true);
 			return extKey.PrivateKey;
 		}

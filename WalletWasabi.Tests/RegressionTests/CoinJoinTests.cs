@@ -336,9 +336,25 @@ namespace WalletWasabi.Tests.RegressionTests
 			blindedOutputScriptsHash = new uint256(NBitcoin.Crypto.Hashes.SHA256(uint256.One.ToBytes()));
 			proof = key.SignCompact(blindedOutputScriptsHash);
 			inputsRequest.Inputs.First().Proof = proof;
+			inputsRequest.Inputs = new List<InputProofModel> { inputsRequest.Inputs.First() };
+
+			httpRequestException = await Assert.ThrowsAsync<HttpRequestException>(async () => await AliceClient.CreateNewAsync(roundId, registeredAddresses, signerPubKeys, requesters, network, inputsRequest, baseUri, null));
+			Assert.Equal($"{HttpStatusCode.BadRequest.ToReasonString()}\nNonce 0 was already used.", httpRequestException.Message);
+
+			nonce = round.GetNextNonce(); 
+			blindedData = new BlindedOutputWithNonceIndex(nonce.N, RandomUtils.GetUInt256());
+			inputsRequest.BlindedOutputScripts = new[] { blindedData };
+			blindedOutputScriptsHash = new uint256(NBitcoin.Crypto.Hashes.SHA256(uint256.One.ToBytes()));
+			proof = key.SignCompact(blindedOutputScriptsHash);
+			inputsRequest.Inputs.First().Proof = proof;
 			inputsRequest.Inputs = new List<InputProofModel> { inputsRequest.Inputs.First(), inputsRequest.Inputs.First() };
 			httpRequestException = await Assert.ThrowsAsync<HttpRequestException>(async () => await AliceClient.CreateNewAsync(roundId, registeredAddresses, signerPubKeys, requesters, network, inputsRequest, baseUri, null));
 			Assert.Equal($"{HttpStatusCode.BadRequest.ToReasonString()}\nCannot register an input twice.", httpRequestException.Message);
+
+			nonce = round.GetNextNonce(); 
+			blindedData = new BlindedOutputWithNonceIndex(nonce.N, requester.BlindScript(round.MixingLevels.GetBaseLevel().SignerKey.PubKey, nonce.R, key.ScriptPubKey));
+			inputsRequest.BlindedOutputScripts = new[] { blindedData };
+			blindedOutputScriptsHash = new uint256(NBitcoin.Crypto.Hashes.SHA256(blindedData.Message.ToBytes()));
 
 			var inputProofs = new List<InputProofModel>();
 			for (int j = 0; j < 8; j++)
@@ -542,6 +558,7 @@ namespace WalletWasabi.Tests.RegressionTests
 			nonce = round.GetNextNonce();
 			var blinded1 = new BlindedOutputWithNonceIndex(nonce.N, requester1.BlindScript(round.MixingLevels.GetBaseLevel().SignerKey.PubKey, nonce.R, outputAddress1.ScriptPubKey));
 			uint256 blindedOutputScriptsHash1 = new uint256(NBitcoin.Crypto.Hashes.SHA256(blinded1.Message.ToBytes()));
+			nonce = round.GetNextNonce();
 			var blinded2 = new BlindedOutputWithNonceIndex(nonce.N, requester2.BlindScript(round.MixingLevels.GetBaseLevel().Signer.Key.PubKey, nonce.R, outputAddress2.ScriptPubKey));
 			uint256 blindedOutputScriptsHash2 = new uint256(NBitcoin.Crypto.Hashes.SHA256(blinded2.Message.ToBytes()));
 

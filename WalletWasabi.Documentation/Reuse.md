@@ -20,7 +20,7 @@ Note that in this description the coordinator (signer) knows what `r` it has to 
 
 ## The solution
 
-Every time a user (acting as Alice) needs to blind a message (_outputs_) he needs to get a fresh `R` from the coordinator and once the coordinator receives that blinded message it has to know what `r` to use in the signature. 
+Every time a user (acting as Alice) needs to blind a message (_outputs_) he needs to get a fresh `R` from the coordinator and once the coordinator receives that blinded message it knows what `r` to use in the signature. 
 
 ### Why a hard fork?
 
@@ -38,7 +38,7 @@ Every time a user (acting as Satoshi) requests the state of the mixing rounds th
 
 #### Register Inputs message
 
-The user (acting as Alice) blinds an output `m` using one of these `R`s and sends the pair `(n, m')` to the coordinator to be signed. The coordinator knows the `roundId` because it comes in the request and with this it can get the round instance and its `ek` so, knowing `ek` and `n` it can derive the nonce private key `r` to use in the signature.
+The user (acting as Alice) blinds an output `m` using one of these `R`s and sends the pair `(n, m')` to the coordinator to be signed. The coordinator knows the `roundId` because it comes in the request and with this it can get the round instance and its `ek` so, knowing `ek` and `n` it can derive the nonce private key `r` to use in the signature. After signing `m'` the coordinator makes `n` as used and fails to sign any future `m` with the same `n`. 
 
 ### Implementation notes
 
@@ -54,13 +54,14 @@ The most important changes are in the `CoordinatorRoundStatus`, `InputRequest` a
 
 The pair `(n, R)` is represented by the class `PublicNonceWithIndex` while the `(n, m')` pair is represented by the class `BlindedOutputWithNonceIndex`.
 
-Just to make the revision easier lets to remove all the noise and hightlight here what matters.
+Just to make the revision easier lets to remove all the noise and highlight here what matters.
 
 * CoordinatorRound.cs
 
 ```c#
 +private ExtKey _nonceGenerator;
 +private int _lastNonceIndex;
++private HashSet<int> _alreadyUsedNonceIndexes;
 
 +public PublicNonceWithIndex GetNextNonce()
 +{
@@ -82,6 +83,11 @@ Just to make the revision easier lets to remove all the noise and hightlight her
 
 +public Key GetNextNonceKey(int n)
 +{
++    if (!_alreadyUsedNonceIndexes.Add(n))
++    {
++        throw new SecurityException($"Nonce {n} was already used.");
++    }
+
 +    var extKey = _nonceGenerator.Derive(n, hardened: true);
 +    return extKey.PrivateKey;
 +}

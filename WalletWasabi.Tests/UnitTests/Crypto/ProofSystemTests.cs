@@ -69,7 +69,7 @@ namespace WalletWasabi.Tests.UnitTests.Crypto
 		public void CanProveAndVerifyZeroAmount()
 		{
 			// The client wants to request a zero amount credential and it needs to prove
-			// that the bliended amount is indeed zero.  
+			// that the blinded amount is indeed zero.  
 			var rnd = new SecureRandom();
 			var amount = Scalar.Zero;
 			var blindingFactor = rnd.GetScalar();

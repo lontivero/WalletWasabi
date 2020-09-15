@@ -14,6 +14,18 @@ namespace WalletWasabi.Crypto.ZeroKnowledge.LinearRelation
 		{
 		}
 
+		public Statement(GroupElement[,] equations)
+		{
+			var terms = equations.GetLength(1);
+			// need to have at least one generator and one public point
+			Guard.True(nameof(terms), terms >= 2);
+
+			// make an equation out of each row taking the first element of each row as the public point
+			var rows = Enumerable.Range(0, equations.GetLength(0));
+			var cols = Enumerable.Range(1, terms-1);
+			Equations = rows.Select(i => new Equation(equations[i,0], new GroupElementVector(cols.Select(j => equations[i,j]))));
+		}
+
 		public Statement(IEnumerable<Equation> equations)
 		{
 			// The equation matrix should not be jagged

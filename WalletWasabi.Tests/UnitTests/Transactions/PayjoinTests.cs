@@ -412,7 +412,7 @@ namespace WalletWasabi.Tests.UnitTests.Transactions
 			Assert.Single(tx.Transaction.Transaction.Inputs);
 		}
 
-		private static PayjoinClient NewPayjoinClient(MockTorHttpClient client)
-			=> new PayjoinClient(client.BaseUriGetter.Invoke(), client);
+		private static PayJoinClient NewPayjoinClient(MockTorHttpClient client)
+			=> new PayJoinClient(client.BaseUriGetter.Invoke(), client);
 	}
 }

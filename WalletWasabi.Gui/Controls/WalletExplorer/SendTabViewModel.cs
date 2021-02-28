@@ -80,7 +80,7 @@ namespace WalletWasabi.Gui.Controls.WalletExplorer
 			ResetUi();
 		}
 
-		private IPayjoinClient? GetPayjoinClient()
+		private PayJoinClient? GetPayjoinClient()
 		{
 			if (!string.IsNullOrWhiteSpace(PayjoinEndPoint) &&
 				Uri.IsWellFormedUriString(PayjoinEndPoint, UriKind.Absolute))
@@ -102,7 +102,7 @@ namespace WalletWasabi.Gui.Controls.WalletExplorer
 				}
 
 				IHttpClient httpClient = Global.Synchronizer.HttpClientFactory.NewHttpClient(() => payjoinEndPointUri, isolateStream: false);
-				return new PayjoinClient(payjoinEndPointUri, httpClient);
+				return new PayJoinClient(payjoinEndPointUri, httpClient);
 			}
 
 			return null;

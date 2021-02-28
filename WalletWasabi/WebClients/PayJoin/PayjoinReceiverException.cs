@@ -1,17 +1,27 @@
+
 namespace WalletWasabi.WebClients.PayJoin
 {
-	public class PayjoinReceiverException : PayjoinException
+	public class PayJoinReceiverException : PayJoinException
 	{
-		public PayjoinReceiverException(int httpCode, string errorCode, string message)
-			: base(message)
+		public PayJoinReceiverException(string errorCode, string receiverMessage) : base(FormatMessage(errorCode, receiverMessage))
 		{
-			HttpCode = httpCode;
 			ErrorCode = errorCode;
-			ErrorMessage = message;
+			ReceiverMessage = receiverMessage;
+			WellknownError = PayJoinReceiverHelper.GetWellknownError(errorCode);
+			ErrorMessage = PayJoinReceiverHelper.GetMessage(errorCode);
 		}
-
-		public int HttpCode { get; }
 		public string ErrorCode { get; }
 		public string ErrorMessage { get; }
+		public string ReceiverMessage { get; }
+
+		public PayJoinReceiverWellknownErrors? WellknownError
+		{
+			get;
+		}
+
+		private static string FormatMessage(string errorCode, string receiverMessage)
+		{
+			return $"{errorCode}: {PayJoinReceiverHelper.GetMessage(errorCode)}. (Receiver message: {receiverMessage})";
+		}
 	}
 }

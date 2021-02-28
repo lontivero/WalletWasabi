@@ -2,7 +2,7 @@ using NBitcoin;
 
 namespace WalletWasabi.WebClients.PayJoin
 {
-	public class PayjoinClientParameters
+	public class PayJoinClientParameters
 	{
 		public Money MaxAdditionalFeeContribution { get; set; }
 		public FeeRate MinFeeRate { get; set; }

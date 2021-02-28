@@ -234,7 +234,7 @@ namespace WalletWasabi.Wallets
 			FeeStrategy feeStrategy,
 			bool allowUnconfirmed = false,
 			IEnumerable<OutPoint>? allowedInputs = null,
-			IPayjoinClient? payjoinClient = null)
+			PayJoinClient? payjoinClient = null)
 		{
 			var builder = new TransactionFactory(Network, KeyManager, Coins, BitcoinStore.TransactionStore, password, allowUnconfirmed);
 			return builder.BuildTransaction(

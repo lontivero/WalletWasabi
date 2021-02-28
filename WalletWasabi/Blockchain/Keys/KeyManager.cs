@@ -12,6 +12,7 @@ using WalletWasabi.JsonConverters;
 using WalletWasabi.Logging;
 using WalletWasabi.Models;
 using WalletWasabi.Wallets;
+using WalletWasabi.WebClients.PayJoin;
 
 namespace WalletWasabi.Blockchain.Keys
 {
@@ -690,5 +691,40 @@ namespace WalletWasabi.Blockchain.Keys
 		}
 
 		#endregion BlockchainState
+
+		public PayJoinWallet AsPayJoinWallet()
+		{
+			if (MasterFingerprint is { } masterFingerprint)
+				return new PayJoinWallet(ExtPubKey, masterFingerprint!);
+			
+			throw new Exception();
+		}
+	}
+
+	public class PayJoinWallet : IPayJoinWallet
+	{
+		public PayJoinWallet(IHDKey accountKey, HDFingerprint fingerprint)
+		{
+			AccountKey = accountKey;
+			RootedKeyPath = new RootedKeyPath(fingerprint, KeyManager.DefaultAccountKeyPath);
+		}
+
+		public ScriptPubKeyType ScriptPubKeyType => ScriptPubKeyType.Segwit;
+
+		public RootedKeyPath RootedKeyPath { get; }
+
+		public IHDKey AccountKey { get; }
+
+		public Script ScriptPubKey => throw new NotImplementedException();
+
+		public bool CanDeriveHardenedPath()
+		{
+			return AccountKey.CanDeriveHardenedPath();
+		}
+
+		public IHDScriptPubKey Derive(KeyPath keyPath)
+		{
+			return AccountKey.AsHDScriptPubKey(ScriptPubKeyType.Segwit).Derive(keyPath);
+		}
 	}
 }

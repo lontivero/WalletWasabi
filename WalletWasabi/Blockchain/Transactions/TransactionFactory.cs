@@ -45,7 +45,7 @@ namespace WalletWasabi.Blockchain.Transactions
 			PaymentIntent payments,
 			FeeRate feeRate,
 			IEnumerable<OutPoint>? allowedInputs = null,
-			IPayjoinClient? payjoinClient = null)
+			PayJoinClient? payjoinClient = null)
 			=> BuildTransaction(payments, () => feeRate, allowedInputs, () => LockTime.Zero, payjoinClient);
 
 		/// <exception cref="ArgumentException"></exception>
@@ -56,7 +56,7 @@ namespace WalletWasabi.Blockchain.Transactions
 			Func<FeeRate> feeRateFetcher,
 			IEnumerable<OutPoint>? allowedInputs = null,
 			Func<LockTime>? lockTimeSelector = null,
-			IPayjoinClient? payjoinClient = null)
+			PayJoinClient? payjoinClient = null)
 		{
 			payments = Guard.NotNull(nameof(payments), payments);
 			lockTimeSelector ??= () => LockTime.Zero;
@@ -236,7 +236,7 @@ namespace WalletWasabi.Blockchain.Transactions
 				// Try to pay using payjoin
 				if (payjoinClient is { })
 				{
-					psbt = TryNegotiatePayjoin(payjoinClient, builder, psbt, changeHdPubKey);
+					psbt = TryNegotiatePayjoin(payjoinClient, builder, psbt, KeyManager.AsPayJoinWallet());
 					isPayjoin = true;
 					psbt.AddKeyPaths(KeyManager);
 					psbt.AddPrevTxs(TransactionStore);
@@ -308,17 +308,13 @@ namespace WalletWasabi.Blockchain.Transactions
 			return new BuildTransactionResult(smartTransaction, psbt, sign, fee, feePc);
 		}
 
-		private PSBT TryNegotiatePayjoin(IPayjoinClient payjoinClient, TransactionBuilder builder, PSBT psbt, HdPubKey changeHdPubKey)
+		private PSBT TryNegotiatePayjoin(PayJoinClient payjoinClient, TransactionBuilder builder, PSBT psbt, IPayJoinWallet wallet)
 		{
 			try
 			{
-				Logger.LogInfo($"Negotiating payjoin payment with `{payjoinClient.PaymentUrl}`.");
+				//Logger.LogInfo($"Negotiating payjoin payment with `{payjoinClient.PaymentUrl}`.");
 
-				psbt = payjoinClient.RequestPayjoin(psbt,
-					KeyManager.ExtPubKey,
-					new RootedKeyPath(KeyManager.MasterFingerprint.Value, KeyManager.DefaultAccountKeyPath),
-					changeHdPubKey,
-					CancellationToken.None).GetAwaiter().GetResult(); // WTF??!
+				psbt = payjoinClient.RequestPayJoin(uri, psbt, wallet, CancellationToken.None).GetAwaiter().GetResult();
 				builder.SignPSBT(psbt);
 
 				Logger.LogInfo($"Payjoin payment was negotiated successfully.");
@@ -335,7 +331,7 @@ namespace WalletWasabi.Blockchain.Transactions
 			{
 				Logger.LogWarning($"Payjoin server responded with {e.ToTypeMessageString()}. Ignoring...");
 			}
-			catch (PayjoinException e)
+			catch (PayJoinException e)
 			{
 				Logger.LogWarning($"Payjoin server responded with {e.Message}. Ignoring...");
 			}

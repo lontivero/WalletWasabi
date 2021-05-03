@@ -6,9 +6,31 @@ using WalletWasabi.Helpers;
 
 namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 {
+	record CredentialTypeTrack
+	{
+		public CredentialType CredentialType { get; init; }
+		public ImmutableDictionary<int, long> EdgeBalances { get; init; } = ImmutableDictionary.Create<int, long>();
+		public ImmutableDictionary<int, ImmutableHashSet<CredentialDependency>> Successors { get; init; } = ImmutableDictionary.Create<int, ImmutableHashSet<CredentialDependency>>();
+		public ImmutableDictionary<int, ImmutableHashSet<CredentialDependency>> Predecessors { get; init;} = ImmutableDictionary.Create<int, ImmutableHashSet<CredentialDependency>>();
+
+		public long Balance(RequestNode node) => node.InitialBalance(CredentialType) + EdgeBalances[node.Id];
+
+		public int InDegree(int nodeId) => InEdges(nodeId).Count();
+
+		public int OutDegree(int nodeId) => OutEdges(nodeId).Count();
+
+		public IEnumerable<CredentialDependency> InEdges(int nodeId) =>	Predecessors[nodeId];
+
+		public IEnumerable<CredentialDependency> OutEdges(int nodeId) => Successors[nodeId];
+
+	}
+
 	public class DependencyGraph
 	{
-		public const int K = 2;
+		public const int K = ProtocolConstants.CredentialNumber;
+
+		// Internal properties used to keep track of effective values and edges
+		private ImmutableDictionary<CredentialType, CredentialTypeTrack> trackers;
 
 		private DependencyGraph(IEnumerable<IEnumerable<long>> initialValues)
 		{
@@ -28,27 +50,21 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 
 			// per node entries created in AddNode, querying nodes not in the
 			// graph should result in key errors.
+			trackers = ImmutableDictionary<CredentialType, CredentialTypeTrack>.Empty
+				.Add(CredentialType.Amount, new () { CredentialType = CredentialType.Amount })
+				.Add(CredentialType.VirtualBytes, new () { CredentialType = CredentialType.VirtualBytes });
 
-			// FIXME initialize members of array, they are currently null
-			Successors = Enumerable.Repeat(0, (int)CredentialType.NumTypes).Select(_ => new Dictionary<int, HashSet<CredentialDependency>>()).ToImmutableArray();
-			Predecessors = Enumerable.Repeat(0, (int)CredentialType.NumTypes).Select(_ => new Dictionary<int, HashSet<CredentialDependency>>()).ToImmutableArray();
-			EdgeBalances = Enumerable.Repeat(0, (int)CredentialType.NumTypes).Select(_ => new Dictionary<int, long>()).ToImmutableArray();
-
-			Vertices = ImmutableList<RequestNode>.Empty;
-
-			foreach (var node in initialValuesImmutable.Select((values, i) => new RequestNode(i, values)))
+			foreach (var (values, i) in initialValuesImmutable.Select((values, i) => (values, i)))
 			{
 				// enforce at least one value != 0? all values? it doesn't actually matter for the algorithm
-				AddNode(node);
+				AddNode(new RequestNode(i, values));
 			}
 		}
 
-		public ImmutableList<RequestNode> Vertices { get; private set; }
+		public ImmutableList<RequestNode> Vertices { get; private set; } = ImmutableList<RequestNode>.Empty;
 
-		// Internal properties used to keep track of effective values and edges
-		private ImmutableArray<Dictionary<int, long>> EdgeBalances { get; }
-		private ImmutableArray<Dictionary<int, HashSet<CredentialDependency>>> Successors { get; }
-		private ImmutableArray<Dictionary<int, HashSet<CredentialDependency>>> Predecessors { get; }
+		public IOrderedEnumerable<RequestNode> VerticesByBalance(CredentialType credentialType) =>
+			Vertices.OrderByDescending(node => trackers[credentialType].Balance(node));
 
 		// TODO doc comment
 		// Public API: construct a graph from amounts, and resolve the
@@ -62,41 +78,18 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 			return graph;
 		}
 
-		public IOrderedEnumerable<RequestNode> VerticesByBalance(CredentialType type) => Vertices.OrderByDescending(x => Balance(x, type));
-
-		public IEnumerable<CredentialDependency> InEdges(RequestNode node, CredentialType credentialType) =>
-			Predecessors[(int)credentialType][node.Id].ToImmutableArray();
-
-		public IEnumerable<CredentialDependency> OutEdges(RequestNode node, CredentialType credentialType) =>
-			Successors[(int)credentialType][node.Id].ToImmutableArray();
-
 		private void AddNode(RequestNode node)
 		{
-			for (CredentialType credentialType = 0; credentialType < CredentialType.NumTypes; credentialType++)
+			foreach (var (credentialType, tracker) in trackers)
 			{
-				var balances = EdgeBalances[(int)credentialType];
-				if (balances.ContainsKey(node.Id))
-				{
-					throw new InvalidOperationException($"Node {node.Id} already exists in graph");
-				}
-				else
-				{
-					balances[node.Id] = 0;
-				}
-
-				foreach (var container in new[] { Successors[(int)credentialType], Predecessors[(int)credentialType] })
-				{
-					if (container.ContainsKey(node.Id))
-					{
-						throw new InvalidOperationException($"Node {node.Id} already exists in graph");
-					}
-					else
-					{
-						container[node.Id] = new HashSet<CredentialDependency>();
-					}
-				}
+				trackers = trackers.SetItem(
+					credentialType,
+					tracker with {
+						EdgeBalances = tracker.EdgeBalances.Add(node.Id, 0),
+						Successors = tracker.Successors.Add(node.Id, ImmutableHashSet<CredentialDependency>.Empty),
+						Predecessors = tracker.Predecessors.Add(node.Id, ImmutableHashSet<CredentialDependency>.Empty)
+					});
 			}
-
 			Vertices = Vertices.Add(node);
 		}
 
@@ -107,19 +100,13 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 			return node;
 		}
 
-		private long Balance(RequestNode node, CredentialType type) =>
-			node.InitialBalance(type) + EdgeBalances[(int)type][node.Id];
 
-		private int InDegree(RequestNode node, CredentialType credentialType) =>
-			Predecessors[(int)credentialType][node.Id].Count;
-
-		private int OutDegree(RequestNode node, CredentialType credentialType) =>
-			Successors[(int)credentialType][node.Id].Count;
-
-		private void AddEdge(CredentialDependency edge)
+		public void AddEdge(CredentialDependency edge)
 		{
-			var successors = Successors[(int)edge.CredentialType][edge.From.Id];
-			var predecessors = Predecessors[(int)edge.CredentialType][edge.To.Id];
+			var tracker = trackers[edge.CredentialType];
+			var empty = ImmutableHashSet<CredentialDependency>.Empty;
+			var successors = tracker.Successors.TryGetValue(edge.From.Id, out var val1) ? val1 : empty;
+			var predecessors = tracker.Predecessors.TryGetValue(edge.To.Id, out var val2) ? val2 : empty;
 
 			// Maintain subset of K-regular graph invariant
 			if (successors.Count == K || predecessors.Count == K)
@@ -130,57 +117,63 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 			// The edge sum invariant are only checked after the graph is
 			// completed, it's too early to enforce that here without context
 			// (ensuring that if all K
-			EdgeBalances[(int)edge.CredentialType][edge.From.Id] -= (long)edge.Value;
-			successors.Add(edge);
-
-			EdgeBalances[(int)edge.CredentialType][edge.To.Id] += (long)edge.Value;
-			predecessors.Add(edge);
+			tracker = tracker with {
+				EdgeBalances = tracker.EdgeBalances
+					.SetItem(edge.From.Id, tracker.EdgeBalances[edge.From.Id] - (long)edge.Value)
+					.SetItem(edge.To.Id, tracker.EdgeBalances[edge.To.Id] + (long)edge.Value),
+				Successors = tracker.Successors
+					.SetItem(edge.From.Id, successors.Add(edge)),
+				Predecessors = tracker.Predecessors
+					.SetItem(edge.To.Id, predecessors.Add(edge))
+				};
+			trackers = trackers.SetItem(edge.CredentialType, tracker);
 		}
 
 		// Drain values towards the center of the graph, propagating values
 		// forwards or backwards corresponding to fan-in and fan out credenetial
 		// dependencies.
-		private void Drain(RequestNode x, IEnumerable<RequestNode> ys, CredentialType type)
+		private void Drain(RequestNode theNode, IEnumerable<RequestNode> nodes, CredentialType type)
 		{
 			// The nodes' initial balance determines edge direction. The given
 			// nodes all have non-zero value and reissuance nodes always start
-			// at 0. When x is a sink, we build a fan-in structure, and and when
-			// x is a source it's an out.
+			// at 0. When theNode is a sink, we build a fan-in structure, and and when
+			// theNode is a source it's an out.
 			// We only check the first of the y nodes to see if we need to treat
-			// x as a source or a sink.
-			var xIsSink = x.InitialBalance(type).CompareTo(ys.First().InitialBalance(type)) == -1;
+			// theNode as a source or a sink.
+			var theNodeIsSink = theNode.InitialBalance(type).CompareTo(nodes.First().InitialBalance(type)) == -1;
 
-			foreach (var y in ys)
+			var tracker = trackers[type];
+			foreach (var node in nodes)
 			{
 				// The amount for the edge is always determined by the `y`
 				// values, since we only add reissuance nodes to reduce the
 				// number of values required.
-				long amount = Balance(y, type);
+				long amount = tracker.Balance(node);
 
 				// TODO opportunistically drain larger credential types, this
 				// will minimize dependencies between requests, weight
 				// credentials should often be easily satisfiable with
 				// parallel edges to the amount credential edges.
-				if (xIsSink)
+				if (theNodeIsSink)
 				{
 					Guard.True(nameof(amount), amount > 0);
-					AddEdge(new(y, x, type, (ulong)amount));
+					AddEdge(new(node, theNode, type, (ulong)amount));
 				}
 				else
 				{
 					Guard.True(nameof(amount), amount != 0);
 					Guard.True(nameof(amount), amount < 0);
 
-					// When x is the source, we can only utilize its remaining
+					// When theNode is the source, we can only utilize its remaining
 					// balance. The effective balance of the last y term term
 					// might still have a negative magnitude after this.
-					if (x.InitialBalance(type) == 0)
+					if (theNode.InitialBalance(type) == 0)
 					{
-						AddEdge(new(x, y, type, (ulong)(-1 * amount)));
+						AddEdge(new(theNode, node, type, (ulong)(-1 * amount)));
 					}
 					else
 					{
-						AddEdge(new(x, y, type, (ulong)Math.Min(Balance(x, type), -1 * amount)));
+						AddEdge(new(theNode, node, type, (ulong)Math.Min(tracker.Balance(theNode), -1 * amount)));
 					}
 				}
 			}
@@ -188,7 +181,7 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 
 		private void ResolveCredentials()
 		{
-			for (CredentialType credentialType = 0; credentialType < CredentialType.NumTypes; credentialType++)
+			foreach (var (credentialType, tracker) in trackers)
 			{
 				// Stop when no negative valued nodes remain. The total sum is
 				// positive, so by discharging elements of opposite values this
@@ -197,8 +190,8 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 				{
 					// Order the nodes of the graph based on their balances
 					var ordered = VerticesByBalance(credentialType).ToImmutableArray();
-					List<RequestNode> positive = ordered.Where(v => Balance(v, credentialType) > 0).ToList();
-					List<RequestNode> negative = Enumerable.Reverse(ordered).Where(v => Balance(v, credentialType) < 0).ToList();
+					List<RequestNode> positive = ordered.Where(node => tracker.Balance(node) > 0).ToList();
+					List<RequestNode> negative = ordered.Where(node => tracker.Balance(node) < 0).Reverse().ToList();
 
 					if (negative.Count == 0)
 					{
@@ -210,8 +203,8 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 
 					IEnumerable<RequestNode> posCandidates() => positive.Take(nPositive);
 					IEnumerable<RequestNode> negCandidates() => negative.Take(nNegative);
-					long posSum() => posCandidates().Sum(x => Balance(x, credentialType));
-					long negSum() => negCandidates().Sum(x => Balance(x, credentialType));
+					long posSum() => posCandidates().Sum(node => tracker.Balance(node));
+					long negSum() => negCandidates().Sum(node => tracker.Balance(node));
 					long compare() => posSum().CompareTo(-1 * negSum());
 
 					// Compare the first of each. we want to fully discharge the
@@ -239,8 +232,8 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 					var largestMagnitudeNode = (fanIn ? negative.Take(nNegative).Single() : positive.Take(nPositive).Single()); // assert n == 1?
 					var smallMagnitudeQueue = (fanIn ? positive.Take(nPositive).Reverse() : negative.Take(nNegative)).ToList(); // reverse positive values so we always proceed in order of increasing magnitude
 					var largestIsSink = largestMagnitudeNode.InitialBalance(credentialType).CompareTo(smallMagnitudeQueue.First().InitialBalance(credentialType)) == -1;
-					var maxCount = (compare() == 0 ? K : K - 1) - (largestIsSink ? InDegree(largestMagnitudeNode, credentialType) : OutDegree(largestMagnitudeNode, credentialType));
-					Guard.True("small values all != 0", smallMagnitudeQueue.All(x => Balance(x, credentialType) != 0));
+					var maxCount = (compare() == 0 ? K : K - 1) - (largestIsSink ? tracker.InDegree(largestMagnitudeNode.Id) : tracker.OutDegree(largestMagnitudeNode.Id));
+					Guard.True("small values all != 0", smallMagnitudeQueue.All(node => tracker.Balance(node) != 0));
 					negative.RemoveRange(0, nNegative);
 					positive.RemoveRange(0, nPositive);
 
@@ -263,19 +256,19 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 						var nodesToCombine = smallMagnitudeQueue.Take(take).ToImmutableArray();
 						smallMagnitudeQueue.RemoveRange(0, take);
 
-						Guard.True("nodes to combine should all have non-zero value", nodesToCombine.All(x => Balance(x, credentialType) != 0));
+						Guard.True("nodes to combine should all have non-zero value", nodesToCombine.All(node => tracker.Balance(node) != 0));
 
 						// enqueue in their stead a reissuance node accounting
 						// for their combined values, positive or negative.
 						Drain(reissuance, nodesToCombine, credentialType);
 
-						Guard.Same("combined nodes should be drained completely", string.Join(" ", Enumerable.Repeat(0L, nodesToCombine.Length)), string.Join(" ", nodesToCombine.Select(x => Balance(x, credentialType))));
-						Guard.True("the reissuance node has a non-zero balance", Balance(reissuance, credentialType) != 0);
-						Guard.True("everything left in the queue has a non-zero balance", smallMagnitudeQueue.All(x => Balance(x, credentialType) != 0));
+						Guard.Same("combined nodes should be drained completely", string.Join(" ", Enumerable.Repeat(0L, nodesToCombine.Length)), string.Join(" ", nodesToCombine.Select(node => tracker.Balance(node))));
+						Guard.True("the reissuance node has a non-zero balance", tracker.Balance(reissuance) != 0);
+						Guard.True("everything left in the queue has a non-zero balance", smallMagnitudeQueue.All(node => tracker.Balance(node) != 0));
 						smallMagnitudeQueue.Add(reissuance);
-						Guard.True("everything left in the queue has a non-zero balance", smallMagnitudeQueue.All(x => Balance(x, credentialType) != 0));
+						Guard.True("everything left in the queue has a non-zero balance", smallMagnitudeQueue.All(node => tracker.Balance(node) != 0));
 					}
-					Guard.True("x", smallMagnitudeQueue.All(x => Balance(x, credentialType) != 0));
+					Guard.True("x", smallMagnitudeQueue.All(node => tracker.Balance(node) != 0));
 
 					// When the queue has been reduced to this point, we can
 					// actually cancel out negative and positive values. If this
@@ -292,7 +285,7 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 					// needs to be returned when it has a non-zero balance,
 					// because the stopping condition is determined only by
 					// negative nodes having been eliminated.
-					if (Balance(smallMagnitudeQueue.Last(), credentialType) != 0)
+					if (tracker.Balance(smallMagnitudeQueue.Last()) != 0)
 					{
 						(fanIn ? negative : positive).Add(smallMagnitudeQueue.Last());
 					}
@@ -319,35 +312,35 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 			// - no negative balances (relax?)
 			foreach (var node in Vertices)
 			{
-				for (CredentialType credentialType = 0; credentialType < CredentialType.NumTypes; credentialType++)
+				foreach (var (credentialType, tracker) in trackers)
 				{
-					var balance = Balance(node, credentialType);
+					var balance = tracker.Balance(node);
 
 					if (balance < 0)
 					{
 						throw new InvalidOperationException("Node must not have negative balance.");
 					}
 
-					var inDegree = InDegree(node, credentialType);
+					var inDegree = tracker.InDegree(node.Id);
 					if (inDegree > K)
 					{
 						// this is dead code, invariant enforced in AddEdge
 						throw new InvalidOperationException("Node must not exceed degree K");
 					}
 
-					if (inDegree == K && Balance(node, credentialType) < 0)
+					if (inDegree == K && tracker.Balance(node) < 0)
 					{
 						throw new InvalidOperationException("Node with maximum in-degree must not have a negative balance.");
 					}
 
-					var outDegree = OutDegree(node, credentialType);
+					var outDegree = tracker.OutDegree(node.Id);
 					if (outDegree > K)
 					{
 						// this is dead code, invariant enforced in AddEdge
 						throw new InvalidOperationException("Node must not exceed degree K");
 					}
 
-					if (outDegree == K && Balance(node, credentialType) != 0)
+					if (outDegree == K && tracker.Balance(node) != 0)
 					{
 						throw new InvalidOperationException("Node with maximum out-degree must not have 0 balance");
 					}

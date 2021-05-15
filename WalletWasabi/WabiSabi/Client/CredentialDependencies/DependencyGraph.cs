@@ -84,20 +84,23 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 
 		private DependencyGraph ResolveCredentials(CredentialType credentialType)
 		{
+			var edgeSet = edgeSets[credentialType];
+
 			// Stop when no negative valued nodes remain. The total sum is
 			// positive, so by discharging elements of opposite values this
 			// list is guaranteed to be reducible until empty.
-			if (!edgeSets[credentialType].SelectNodesToDischarge(Vertices, out RequestNode? largestMagnitudeNode, out IEnumerable<RequestNode> smallMagnitudeNodes, out bool fanIn))
+			if (!edgeSet.SelectNodesToDischarge(Vertices, out RequestNode? largestMagnitudeNode, out IEnumerable<RequestNode> smallMagnitudeNodes, out bool fanIn))
 			{
 				return this;
 			}
 
-			var edgeSet = edgeSets[credentialType];
-			var maxCount = (fanIn ? edgeSet.RemainingInDegree(largestMagnitudeNode!) : edgeSet.RemainingOutDegree(largestMagnitudeNode!));
+			var maxCount = fanIn
+				? edgeSet.RemainingInDegree(largestMagnitudeNode)
+				: edgeSet.RemainingOutDegree(largestMagnitudeNode);
 
 			var g = this;
 
-			if (Math.Abs(edgeSet.Balance(largestMagnitudeNode!)) > Math.Abs(smallMagnitudeNodes.Sum(x => edgeSet.Balance(x))))
+			if (Math.Abs(edgeSet.Balance(largestMagnitudeNode)) > Math.Abs(smallMagnitudeNodes.Sum(x => edgeSet.Balance(x))))
 			{
 				// When we are draining a positive valued node into multiple
 				// negative nodes and we can't drain it completely, we need to
@@ -118,7 +121,7 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 					// otherwise, drain the largest magnitudenode into a new
 					// reissuance node which will have room for an unused edge
 					// in its out edge set.
-					(g, largestMagnitudeNode) = AggregateIntoReissuanceNode(new RequestNode[] { largestMagnitudeNode! }, credentialType);
+					(g, largestMagnitudeNode) = AggregateIntoReissuanceNode(new RequestNode[] { largestMagnitudeNode }, credentialType);
 				}
 			}
 
@@ -128,7 +131,7 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 
 			// After draining either the last small magnitude node or the
 			// largest magnitude node could still have a non-zero value.
-			return g.DrainTerminal(largestMagnitudeNode!, smallMagnitudeNodes, credentialType).ResolveCredentials(credentialType);
+			return g.DrainTerminal(largestMagnitudeNode, smallMagnitudeNodes, credentialType).ResolveCredentials(credentialType);
 		}
 
 		// Build a k-ary tree bottom up to reduce a list of nodes to discharge

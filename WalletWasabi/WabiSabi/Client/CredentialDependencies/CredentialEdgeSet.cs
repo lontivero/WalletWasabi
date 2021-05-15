@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 
 namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
@@ -36,9 +37,6 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 			}
 
 			var edge = new CredentialDependency(from, to, CredentialType, value);
-
-			var predecessors = InEdges(edge.To);
-			var successors = OutEdges(edge.From);
 
 			// Maintain subset of K-regular graph invariant
 			if (RemainingOutDegree(edge.From) == 0 || RemainingInDegree(edge.To) == 0)
@@ -76,6 +74,9 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 				}
 			}
 
+			var predecessors = InEdges(edge.To);
+			var successors = OutEdges(edge.From);
+
 			return this with
 			{
 				Predecessors = Predecessors.SetItem(edge.To, predecessors.Add(edge)),
@@ -92,54 +93,51 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 		// Find the largest negative or positive balance node for the given
 		// credential type, and one or more smaller nodes with a combined total
 		// magnitude exceeding that of the largest magnitude node when possible.
-		public bool SelectNodesToDischarge(IEnumerable<RequestNode> nodes, out RequestNode? largestMagnitudeNode, out IEnumerable<RequestNode> smallMagnitudeNodes, out bool fanIn)
+		public bool SelectNodesToDischarge(
+			IEnumerable<RequestNode> nodes,
+			[NotNullWhen(true)] out RequestNode? largestMagnitudeNode,
+			[NotNullWhen(true)] out IEnumerable<RequestNode> smallMagnitudeNodes,
+			out bool fanIn)
 		{
 			// Order the given of the graph based on their balances
 			var ordered = OrderByBalance(nodes);
-			ImmutableArray<RequestNode> positive = ordered.ThenBy(x => OutDegree(x)).Where(v => Balance(v) > 0).ToImmutableArray();
-			ImmutableArray<RequestNode> negative = Enumerable.Reverse(ordered.ThenByDescending(x => InDegree(x)).Where(v => Balance(v) < 0)).ToImmutableArray();
+			var positiveRequestNodes = ordered.ThenBy(x => OutDegree(x)).Where(v => Balance(v) > 0).ToImmutableArray();
+			var negativeRequestNodes = ordered.ThenByDescending(x => InDegree(x)).Where(v => Balance(v) < 0).Reverse().ToImmutableArray();
 
-			if (negative.Length == 0)
+			if (!negativeRequestNodes.Any())
 			{
 				largestMagnitudeNode = null;
-				smallMagnitudeNodes = new RequestNode[0];
+				smallMagnitudeNodes = Array.Empty<RequestNode>();
 				fanIn = false;
 				return false;
 			}
 
-			var nPositive = 1;
-			var nNegative = 1;
-
-			IEnumerable<RequestNode> PositiveCandidates() => positive.Take(nPositive);
-			IEnumerable<RequestNode> NegativeCandidates() => negative.Take(nNegative);
-			long PositiveSum() => PositiveCandidates().Sum(x => Balance(x));
-			long NegativeSum() => NegativeCandidates().Sum(x => Balance(x));
-			long CompareSums() => PositiveSum().CompareTo(-1 * NegativeSum());
+			int BalanceSign(int possitiveCount, int negativeCount) =>
+				positiveRequestNodes.Take(possitiveCount).Sum(x => Balance(x)).CompareTo(
+				negativeRequestNodes.Take(negativeCount).Sum(x => -Balance(x)));
 
 			// We want to fully discharge the larger (in absolute magnitude) of
 			// the two nodes, so we will add more nodes to the smaller one until
 			// we can fully cover. At each step of the iteration we fully
 			// discharge at least 2 nodes from the queue.
-			var initialComparison = CompareSums();
-			fanIn = initialComparison == -1;
-
-			if (initialComparison != 0)
+			(int, int, bool) EvaluateCombination(int prevSign, int p, int n, int availablePossitives, int availableNegatives)
 			{
-				Action takeOneMore = fanIn ? () => nPositive++ : () => nNegative++;
-
-				// Take more nodes until the comparison sign changes or
-				// we run out.
-				while (initialComparison == CompareSums()
-					   && (fanIn ? positive.Length - nPositive > 0
-								 : negative.Length - nNegative > 0))
+				var sign = BalanceSign(p, n);
+				return (sign == prevSign, sign, availablePossitives, availableNegatives) switch
 				{
-					takeOneMore();
-				}
+					(true, < 0, > 0, _) => EvaluateCombination(sign, ++p, n, --availablePossitives, availableNegatives),
+					(true, > 0, _, > 0) => EvaluateCombination(sign, p, ++n, availablePossitives, --availableNegatives),
+					_ => (p, n, prevSign < 0)
+				};
 			}
+			var initialSign = BalanceSign(1, 1);
+			var (p, n, isFanIn) = EvaluateCombination(initialSign, 1, 1, positiveRequestNodes.Count(), negativeRequestNodes.Count());
 
-			largestMagnitudeNode = (fanIn ? negative.First() : positive.First());
-			smallMagnitudeNodes = (fanIn ? positive.Take(nPositive).Reverse() : negative.Take(nNegative)); // reverse positive values so we always proceed in order of increasing magnitude
+			(largestMagnitudeNode, smallMagnitudeNodes) = isFanIn
+				? (negativeRequestNodes.First(), positiveRequestNodes.Take(p).Reverse())
+				: (positiveRequestNodes.First(), negativeRequestNodes.Take(n));
 
+			fanIn = isFanIn;
 			return true;
 		}
 

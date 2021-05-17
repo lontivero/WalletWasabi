@@ -27,8 +27,6 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 
 		public int RemainingOutDegree(RequestNode node) => node.InitialBalance(CredentialType) >= 0 ? DependencyGraph.K - OutDegree(node) : 0;
 
-		public IOrderedEnumerable<RequestNode> OrderByBalance(IEnumerable<RequestNode> nodes) => nodes.OrderByDescending(v => Balance(v));
-
 		public CredentialEdgeSet AddEdge(RequestNode from, RequestNode to, ulong value)
 		{
 			if (value == 0)
@@ -100,7 +98,7 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 			out bool fanIn)
 		{
 			// Order the given of the graph based on their balances
-			var ordered = OrderByBalance(nodes);
+			var ordered = nodes.OrderByDescending(v => Balance(v));
 			var positiveRequestNodes = ordered.ThenBy(x => OutDegree(x)).Where(v => Balance(v) > 0);
 			var negativeRequestNodes = ordered.ThenByDescending(x => InDegree(x)).Where(v => Balance(v) < 0).Reverse();
 

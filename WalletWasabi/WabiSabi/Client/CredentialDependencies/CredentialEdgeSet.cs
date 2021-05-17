@@ -148,50 +148,30 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 			// number of charged nodes overall.
 			=> nodes.Aggregate(this, (edgeSet, node) => edgeSet.DrainReissuance(reissuance, node));
 
-		private CredentialEdgeSet DrainReissuance(RequestNode reissuance, RequestNode node)
-		{
-			// Due to opportunistic draining of lower priority credential
-			// types when defining a reissuance node for higher priority
-			// ones, the amount is not guaranteed to be zero, avoid adding
-			// such edges.
-			long value = Balance(node);
-
-			if (value > 0)
-			{
-				return AddEdge(node, reissuance, (ulong)value);
-			}
-			else if (value < 0)
-			{
-				return AddEdge(reissuance, node, (ulong)(-1 * value));
-			}
-			else
-			{
-				return this;
-			}
-		}
-
 		// Drain credential values between terminal nodes, cancelling out
 		// opposite values by propagating forwards or backwards corresponding to
 		// fan-in and fan-out dependency structure.
 		public CredentialEdgeSet DrainTerminal(RequestNode node, IEnumerable<RequestNode> nodes)
 			=> nodes.Aggregate(this, (edgeSet, otherNode) => edgeSet.DrainTerminal(node, otherNode));
 
-		private CredentialEdgeSet DrainTerminal(RequestNode node, RequestNode dischargeNode)
-		{
-			long value = Balance(dischargeNode);
+		private CredentialEdgeSet DrainReissuance(RequestNode reissuance, RequestNode node) =>
+			// Due to opportunistic draining of lower priority credential
+			// types when defining a reissuance node for higher priority
+			// ones, the amount is not guaranteed to be zero, avoid adding
+			// such edges.
+			Balance(node) switch
+			{
+				> 0 and long v => AddEdge(node, reissuance, (ulong)v),
+				< 0 and long v => AddEdge(reissuance, node, (ulong)(-1 * v)),
+				_  => this
+			};
 
-			if (value > 0)
+		private CredentialEdgeSet DrainTerminal(RequestNode node, RequestNode dischargeNode) =>
+			Balance(dischargeNode) switch
 			{
-				return AddEdge(dischargeNode, node, (ulong)Math.Min(-1 * Balance(node), value));
-			}
-			else if (value < 0)
-			{
-				return AddEdge(node, dischargeNode, (ulong)Math.Min(Balance(node), -1 * value));
-			}
-			else
-			{
-				throw new InvalidOperationException("Can't drain terminal nodes with 0 balance");
-			}
-		}
+				> 0 and long v => AddEdge(dischargeNode, node, (ulong)Math.Min(-1 * Balance(node), v)),
+				< 0 and long v => AddEdge(node, dischargeNode, (ulong)Math.Min(Balance(node), -1 * v)),
+				_  => throw new InvalidOperationException("Can't drain terminal nodes with 0 balance")
+			};
 	}
 }

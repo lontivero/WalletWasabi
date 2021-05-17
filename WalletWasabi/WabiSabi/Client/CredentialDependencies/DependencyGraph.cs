@@ -53,7 +53,7 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 			{
 				if (initialValues.Sum(x => x.Skip((int)i).First()) < 0)
 				{
-					throw new ArgumentException("Overall balance must not be negative");
+					throw new ArgumentException("Overall balance must not be negative.");
 				}
 			}
 

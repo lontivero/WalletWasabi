@@ -101,8 +101,8 @@ namespace WalletWasabi.WabiSabi.Client.CredentialDependencies
 		{
 			// Order the given of the graph based on their balances
 			var ordered = OrderByBalance(nodes);
-			var positiveRequestNodes = ordered.ThenBy(x => OutDegree(x)).Where(v => Balance(v) > 0).ToImmutableArray();
-			var negativeRequestNodes = ordered.ThenByDescending(x => InDegree(x)).Where(v => Balance(v) < 0).Reverse().ToImmutableArray();
+			var positiveRequestNodes = ordered.ThenBy(x => OutDegree(x)).Where(v => Balance(v) > 0);
+			var negativeRequestNodes = ordered.ThenByDescending(x => InDegree(x)).Where(v => Balance(v) < 0).Reverse();
 
 			if (!negativeRequestNodes.Any())
 			{

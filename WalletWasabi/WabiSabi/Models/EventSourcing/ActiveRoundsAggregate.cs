@@ -6,7 +6,7 @@ namespace WalletWasabi.WabiSabi.Models.EventSourcing
 
 		public override void Apply(RoundCreated roundCreatedEvent)
 		{
-			State = State with { Rounds = State.Rounds.Add(roundCreatedEvent.Round) };
+			State = State with { Rounds = State.Rounds.Add(new RoundAggregate(roundCreatedEvent.Round)) };
 		}
 	}
 }

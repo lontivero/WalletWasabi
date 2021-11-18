@@ -7,7 +7,7 @@ namespace WalletWasabi.WabiSabi.Models.EventSourcing
 {
 	public record ActiveRoundsState
 	{
-		public ImmutableList<Round> Rounds { get; init; } = ImmutableList<Round>.Empty;
-		public IEnumerable<Round> InPhase(Phase phase) => Rounds.Where(x => x.Phase == phase);
+		public ImmutableList<RoundAggregate> Rounds { get; init; } = ImmutableList<RoundAggregate>.Empty;
+		public IEnumerable<RoundAggregate> InPhase(Phase phase) => Rounds.Where(x => x.State.Phase == phase);
 	}
 }

@@ -4,17 +4,17 @@ using System.Linq;
 
 namespace WalletWasabi.WabiSabi.Models.MultipartyTransaction
 {
-	public abstract record MultipartyTransactionState
+	public record MultipartyTransactionState
 	{
-		protected MultipartyTransactionState(MultipartyTransactionParameters parameters)
+		public MultipartyTransactionState(MultipartyTransactionParameters parameters)
 		{
 			Parameters = parameters;
 		}
 
 		public MultipartyTransactionParameters Parameters { get; }
-
 		public ImmutableList<Coin> Inputs { get; init; } = ImmutableList<Coin>.Empty;
 		public ImmutableList<TxOut> Outputs { get; init; } = ImmutableList<TxOut>.Empty;
+		public ImmutableDictionary<uint, WitScript> Witnesses { get; init; } = ImmutableDictionary<uint, WitScript>.Empty;
 
 		public Money Balance => Inputs.Sum(x => x.Amount) - Outputs.Sum(x => x.Value);
 		public int EstimatedInputsVsize => Inputs.Sum(x => x.TxOut.ScriptPubKey.EstimateInputVsize());

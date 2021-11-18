@@ -61,7 +61,7 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 		public int InitialInputVsizeAllocation { get; internal set; }
 		public int RemainingInputVsizeAllocation => InitialInputVsizeAllocation - (InputCount * MaxVsizeAllocationPerAlice);
 
-		protected RoundParameters RoundParameters { get; }
+		public RoundParameters RoundParameters { get; }
 
 		public TState Assert<TState>() where TState : MultipartyTransactionState =>
 			CoinjoinState switch

@@ -39,7 +39,7 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 		}
 
 		public ActiveRoundsAggregate ActiveRoundsAggregate { get; }
-		public HashSet<Round> Rounds => ActiveRoundsAggregate.State.Rounds.ToHashSet();
+		public HashSet<Round> Rounds => ActiveRoundsAggregate.State.Rounds.Select(x => x.State).ToHashSet();
 		private AsyncLock AsyncLock { get; } = new();
 		private Network Network { get; }
 		private WabiSabiConfig Config { get; }
@@ -74,8 +74,9 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 
 		private async Task StepInputRegistrationPhaseAsync(CancellationToken cancel)
 		{
-			foreach (var round in ActiveRoundsAggregate.State.InPhase(Phase.InputRegistration).Where(x => x.IsInputRegistrationEnded(Config.MaxInputCountByRound)))
+			foreach (var roundAggregate in ActiveRoundsAggregate.State.InPhase(Phase.InputRegistration).Where(x => x.State.IsInputRegistrationEnded(Config.MaxInputCountByRound)))
 			{
+				var round = roundAggregate.State;
 				await foreach (var offendingAlices in CheckTxoSpendStatusAsync(round, cancel).ConfigureAwait(false))
 				{
 					if (offendingAlices.Any())
@@ -90,23 +91,24 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 					{
 						continue;
 					}
-					round.SetPhase(Phase.Ended);
+					roundAggregate.Apply(new StatePhaseChanged(Phase.Ended));
 					round.LogInfo($"Not enough inputs ({round.InputCount}) in {nameof(Phase.InputRegistration)} phase.");
 				}
 				else if (round.IsInputRegistrationEnded(Config.MaxInputCountByRound))
 				{
-					round.SetPhase(Phase.ConnectionConfirmation);
+					roundAggregate.Apply(new StatePhaseChanged(Phase.ConnectionConfirmation));
 				}
 			}
 		}
 
 		private async Task StepConnectionConfirmationPhaseAsync(CancellationToken cancel)
 		{
-			foreach (var round in ActiveRoundsAggregate.State.InPhase(Phase.ConnectionConfirmation))
+			foreach (var roundAggregate in ActiveRoundsAggregate.State.InPhase(Phase.ConnectionConfirmation))
 			{
+				var round = roundAggregate.State;
 				if (round.Alices.All(x => x.ConfirmedConnection))
 				{
-					round.SetPhase(Phase.OutputRegistration);
+					roundAggregate.Apply(new StatePhaseChanged(Phase.OutputRegistration));
 				}
 				else if (round.ConnectionConfirmationTimeFrame.HasExpired)
 				{
@@ -135,12 +137,12 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 
 					if (round.InputCount < Config.MinInputCountByRound)
 					{
-						round.SetPhase(Phase.Ended);
+						roundAggregate.Apply(new StatePhaseChanged(Phase.Ended));
 						round.LogInfo($"Not enough inputs ({round.InputCount}) in {nameof(Phase.ConnectionConfirmation)} phase.");
 					}
 					else
 					{
-						round.SetPhase(Phase.OutputRegistration);
+						roundAggregate.Apply(new StatePhaseChanged(Phase.OutputRegistration));
 					}
 				}
 			}
@@ -148,8 +150,9 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 
 		private void StepOutputRegistrationPhase()
 		{
-			foreach (var round in ActiveRoundsAggregate.State.InPhase(Phase.OutputRegistration))
+			foreach (var roundAggregate in ActiveRoundsAggregate.State.InPhase(Phase.OutputRegistration))
 			{
+				var round = roundAggregate.State;
 				var allReady = round.Alices.All(a => a.ReadyToSign);
 
 				if (allReady || round.OutputRegistrationTimeFrame.HasExpired)
@@ -174,15 +177,16 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 
 					round.CoinjoinState = coinjoin.Finalize();
 
-					round.SetPhase(Phase.TransactionSigning);
+					roundAggregate.Apply(new StatePhaseChanged(Phase.TransactionSigning));
 				}
 			}
 		}
 
 		private async Task StepTransactionSigningPhaseAsync(CancellationToken cancellationToken)
 		{
-			foreach (var round in ActiveRoundsAggregate.State.InPhase(Phase.TransactionSigning))
+			foreach (var roundAggregate in ActiveRoundsAggregate.State.InPhase(Phase.TransactionSigning))
 			{
+				var round = roundAggregate.State;
 				var state = round.Assert<SigningState>();
 
 				try

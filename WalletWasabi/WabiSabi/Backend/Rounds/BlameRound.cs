@@ -3,7 +3,7 @@ using System.Collections.Generic;
 
 namespace WalletWasabi.WabiSabi.Backend.Rounds
 {
-	public class BlameRound : Round
+	public record BlameRound : Round
 	{
 		public BlameRound(RoundParameters roundParameters, Round blameOf, ISet<OutPoint> blameWhitelist)
 			: base(roundParameters)

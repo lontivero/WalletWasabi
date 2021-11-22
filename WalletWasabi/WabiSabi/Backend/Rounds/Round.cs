@@ -1,6 +1,7 @@
 using NBitcoin;
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using WalletWasabi.Crypto;
 using WalletWasabi.WabiSabi.Backend.Models;
 using WalletWasabi.WabiSabi.Crypto;
@@ -9,7 +10,7 @@ using WalletWasabi.WabiSabi.Models.MultipartyTransaction;
 
 namespace WalletWasabi.WabiSabi.Backend.Rounds
 {
-	public class Round
+	public record Round
 	{
 		private uint256 _id;
 		public Round(RoundParameters roundParameters)
@@ -47,18 +48,18 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 		public CredentialIssuer VsizeCredentialIssuer { get; }
 		public CredentialIssuerParameters AmountCredentialIssuerParameters { get; }
 		public CredentialIssuerParameters VsizeCredentialIssuerParameters { get; }
-		public List<Alice> Alices { get; } = new();
+		public ImmutableList<Alice> Alices { get; init; } = ImmutableList<Alice>.Empty;
 		public int InputCount => Alices.Count;
 		public List<Bob> Bobs { get; } = new();
 
-		public Phase Phase { get; private set; } = Phase.InputRegistration;
-		public TimeFrame InputRegistrationTimeFrame { get; internal set; }
-		public TimeFrame ConnectionConfirmationTimeFrame { get; private set; }
-		public TimeFrame OutputRegistrationTimeFrame { get; private set; }
-		public TimeFrame TransactionSigningTimeFrame { get; private set; }
-		public DateTimeOffset End { get; private set; }
-		public bool WasTransactionBroadcast { get; set; }
-		public int InitialInputVsizeAllocation { get; internal set; }
+		public Phase Phase { get; init; } = Phase.InputRegistration;
+		public TimeFrame InputRegistrationTimeFrame { get; init; }
+		public TimeFrame ConnectionConfirmationTimeFrame { get; init; }
+		public TimeFrame OutputRegistrationTimeFrame { get; init; }
+		public TimeFrame TransactionSigningTimeFrame { get; init; }
+		public DateTimeOffset End { get; init; }
+		public bool WasTransactionBroadcast { get; init; }
+		public int InitialInputVsizeAllocation { get; init; }
 		public int RemainingInputVsizeAllocation => InitialInputVsizeAllocation - (InputCount * MaxVsizeAllocationPerAlice);
 
 		public RoundParameters RoundParameters { get; }
@@ -78,24 +79,6 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 			}
 
 			this.LogInfo($"Phase changed: {Phase} -> {phase}");
-			Phase = phase;
-
-			if (phase == Phase.ConnectionConfirmation)
-			{
-				ConnectionConfirmationTimeFrame = ConnectionConfirmationTimeFrame.StartNow();
-			}
-			else if (phase == Phase.OutputRegistration)
-			{
-				OutputRegistrationTimeFrame = OutputRegistrationTimeFrame.StartNow();
-			}
-			else if (phase == Phase.TransactionSigning)
-			{
-				TransactionSigningTimeFrame = TransactionSigningTimeFrame.StartNow();
-			}
-			else if (phase == Phase.Ended)
-			{
-				End = DateTimeOffset.UtcNow;
-			}
 		}
 
 		public virtual bool IsInputRegistrationEnded(int maxInputCount)

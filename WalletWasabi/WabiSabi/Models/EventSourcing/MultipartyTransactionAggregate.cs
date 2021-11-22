@@ -11,9 +11,9 @@ namespace WalletWasabi.WabiSabi.Models.EventSourcing
 
 		public MultipartyTransactionState State { get; private set; }
 
-		public override void Apply(InputAdded inputAddedEvent)
+		public override void Apply(AliceCreated inputAddedEvent)
 		{
-			State = State with { Inputs = State.Inputs.Add(inputAddedEvent.Coin) };
+			State = State with { Inputs = State.Inputs.Add(inputAddedEvent.Alice.Coin) };
 		}
 		public override void Apply(OutputAdded outputAddedEvent)
 		{

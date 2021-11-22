@@ -10,6 +10,7 @@ using WalletWasabi.WabiSabi.Backend.Models;
 using WalletWasabi.WabiSabi.Backend.PostRequests;
 using WalletWasabi.WabiSabi.Crypto.CredentialRequesting;
 using WalletWasabi.WabiSabi.Models;
+using WalletWasabi.WabiSabi.Models.EventSourcing;
 using WalletWasabi.WabiSabi.Models.MultipartyTransaction;
 
 namespace WalletWasabi.WabiSabi.Backend.Rounds
@@ -22,7 +23,8 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 
 			using (await AsyncLock.LockAsync(cancellationToken).ConfigureAwait(false))
 			{
-				var round = GetRound(request.RoundId);
+				var roundAggregate = GetRoundAggregate(request.RoundId);
+				var round = roundAggregate.State;
 
 				var registeredCoins = Rounds.Where(x => !(x.Phase == Phase.Ended && !x.WasTransactionBroadcast))
 					.SelectMany(r => r.Alices.Select(a => a.Coin));
@@ -86,9 +88,10 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 				var commitVsizeCredentialResponse = await vsizeCredentialTask.ConfigureAwait(false);
 
 				alice.SetDeadlineRelativeTo(round.ConnectionConfirmationTimeFrame.Duration);
-				round.Alices.Add(alice);
 
-				return new(alice.Id,
+				roundAggregate.Apply(new AliceCreated(alice));
+
+				return new(id,
 					commitAmountCredentialResponse,
 					commitVsizeCredentialResponse);
 			}
@@ -311,6 +314,9 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 				return Rounds.Select(x => RoundState.FromRound(x)).ToArray();
 			}
 		}
+		private RoundAggregate GetRoundAggregate(uint256 roundId) =>
+			ActiveRoundsAggregate.State.Rounds.FirstOrDefault(x => x.State.Id == roundId)
+			?? throw new WabiSabiProtocolException(WabiSabiProtocolErrorCode.RoundNotFound, $"Round ({roundId}) not found.");
 
 		private Round GetRound(uint256 roundId) =>
 			Rounds.FirstOrDefault(x => x.Id == roundId)

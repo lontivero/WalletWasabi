@@ -222,8 +222,8 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 
 						// Broadcasting.
 						await Rpc.SendRawTransactionAsync(coinjoin, cancellationToken).ConfigureAwait(false);
-						round.WasTransactionBroadcast = true;
-						round.SetPhase(Phase.Ended);
+						roundAggregate.Apply(new CoinJoinTransactionBroadcasted());
+						roundAggregate.Apply(new StatePhaseChanged(Phase.Ended));
 
 						round.LogInfo($"Successfully broadcast the CoinJoin: {coinjoin.GetHash()}.");
 					}
@@ -235,7 +235,7 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 				catch (Exception ex)
 				{
 					round.LogWarning($"Signing phase failed, reason: '{ex}'.");
-					await FailTransactionSigningPhaseAsync(round, cancellationToken).ConfigureAwait(false);
+					await FailTransactionSigningPhaseAsync(roundAggregate, cancellationToken).ConfigureAwait(false);
 				}
 			}
 		}
@@ -258,8 +258,9 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 			}
 		}
 
-		private async Task FailTransactionSigningPhaseAsync(Round round, CancellationToken cancellationToken)
+		private async Task FailTransactionSigningPhaseAsync(RoundAggregate roundAggregate, CancellationToken cancellationToken)
 		{
+			var round = roundAggregate.State;
 			var state = round.Assert<SigningState>();
 
 			var unsignedPrevouts = state.UnsignedInputs.ToHashSet();
@@ -276,7 +277,7 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 			}
 
 			round.Alices.RemoveAll(x => alicesWhoDidntSign.Contains(x));
-			round.SetPhase(Phase.Ended);
+			roundAggregate.Apply(new StatePhaseChanged(Phase.Ended));
 
 			if (round.InputCount >= Config.MinInputCountByRound)
 			{
@@ -323,11 +324,13 @@ namespace WalletWasabi.WabiSabi.Backend.Rounds
 		{
 			foreach (var round in Rounds.Where(x => !x.IsInputRegistrationEnded(Config.MaxInputCountByRound)).ToArray())
 			{
+				/*
 				var removedAliceCount = round.Alices.RemoveAll(x => x.Deadline < DateTimeOffset.UtcNow);
 				if (removedAliceCount > 0)
 				{
 					round.LogInfo($"{removedAliceCount} alices timed out and removed.");
 				}
+				*/
 			}
 		}
 

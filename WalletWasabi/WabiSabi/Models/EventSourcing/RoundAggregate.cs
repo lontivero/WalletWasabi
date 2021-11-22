@@ -1,3 +1,4 @@
+using System;
 using NBitcoin;
 using WalletWasabi.WabiSabi.Backend.Rounds;
 using WalletWasabi.WabiSabi.Models.MultipartyTransaction;
@@ -15,12 +16,12 @@ namespace WalletWasabi.WabiSabi.Models.EventSourcing
 			MultipartyTransactionAggregate = new MultipartyTransactionAggregate(txParams);
 		}
 
-		public Round State { get; init; }
+		public Round State { get; private set; }
 		public MultipartyTransactionAggregate MultipartyTransactionAggregate { get; }
 
-		public override void Apply(InputAdded inputAddedEvent)
+		public override void Apply(AliceCreated aliceAddedEvent)
 		{
-			MultipartyTransactionAggregate.Apply(inputAddedEvent);
+			State = State with { Alices = State.Alices.Add(aliceAddedEvent.Alice) };
 		}
 		public override void Apply(OutputAdded outputAddedEvent)
 		{
@@ -32,7 +33,28 @@ namespace WalletWasabi.WabiSabi.Models.EventSourcing
 		}
 		public override void Apply(StatePhaseChanged stateChangedEvent)
 		{
-			//State = State with { Phase = stateChangedEvent.NewPhase };
+			State = State with { Phase = stateChangedEvent.NewPhase };
+
+			if (State.Phase == Phase.ConnectionConfirmation)
+			{
+				State = State with { ConnectionConfirmationTimeFrame = State.ConnectionConfirmationTimeFrame.StartNow() };
+			}
+			else if (State.Phase == Phase.OutputRegistration)
+			{
+				State = State with { OutputRegistrationTimeFrame = State.OutputRegistrationTimeFrame.StartNow() };
+			}
+			else if (State.Phase == Phase.TransactionSigning)
+			{
+				State = State with { TransactionSigningTimeFrame = State.TransactionSigningTimeFrame.StartNow() };
+			}
+			else if (State.Phase== Phase.Ended)
+			{
+				State = State with { End = DateTimeOffset.UtcNow };
+			}
+		}
+		public override void Apply(CoinJoinTransactionBroadcasted coinJoinTransactionBroadcastedEvent)
+		{
+			State = State with { WasTransactionBroadcast = true };
 		}
 	}
 }

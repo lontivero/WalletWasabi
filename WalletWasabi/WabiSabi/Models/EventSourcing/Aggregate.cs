@@ -5,7 +5,7 @@ namespace WalletWasabi.WabiSabi.Models.EventSourcing
 		public virtual void Apply(RoundCreated roundCreatedEvent)
 		{
 		}
-		public virtual void Apply(InputAdded inputAddedEvent)
+		public virtual void Apply(AliceCreated inputAddedEvent)
 		{
 		}
 		public virtual void Apply(OutputAdded outputAddedEvent)
@@ -15,6 +15,9 @@ namespace WalletWasabi.WabiSabi.Models.EventSourcing
 		{
 		}
 		public virtual void Apply(StatePhaseChanged stateChangedEvent)
+		{
+		}
+		public virtual void Apply(CoinJoinTransactionBroadcasted coinJoinTransactionBroadcastedEvent)
 		{
 		}
 	}

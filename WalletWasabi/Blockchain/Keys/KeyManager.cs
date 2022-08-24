@@ -139,15 +139,6 @@ public class KeyManager
 
 	public KeyPath AccountKeyPath { get; private set; }
 
-	[JsonIgnore]
-	public string? FilePath { get; private set; }
-
-	[JsonIgnore, MemberNotNullWhen(returnValue: false, nameof(EncryptedSecret))]
-	public bool IsWatchOnly => EncryptedSecret is null;
-
-	[JsonIgnore, MemberNotNullWhen(returnValue: true, nameof(MasterFingerprint))]
-	public bool IsHardwareWallet => EncryptedSecret is null && MasterFingerprint is not null;
-
 	public BlockchainState BlockchainState { get; }
 
 	public bool PreferPsbtWorkflow { get; set; }
@@ -172,6 +163,15 @@ public class KeyManager
 	[JsonProperty(Order = 999)]
 	private List<HdPubKey> HdPubKeys { get; }
 
+	[JsonIgnore]
+	public string? FilePath { get; private set; }
+
+	[JsonIgnore, MemberNotNullWhen(returnValue: false, nameof(EncryptedSecret))]
+	public bool IsWatchOnly => EncryptedSecret is null;
+
+	[JsonIgnore, MemberNotNullWhen(returnValue: true, nameof(MasterFingerprint))]
+	public bool IsHardwareWallet => EncryptedSecret is null && MasterFingerprint is not null;
+	
 	private object BlockchainStateLock { get; }
 
 	private object HdPubKeysLock { get; }

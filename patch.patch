@@ -1,0 +1,28 @@
+diff --git a/WalletWasabi/WabiSabi/Backend/Rounds/Arena.cs b/WalletWasabi/WabiSabi/Backend/Rounds/Arena.cs
+index f1d0f65fa9..d82d8938c4 100644
+--- a/WalletWasabi/WabiSabi/Backend/Rounds/Arena.cs
++++ b/WalletWasabi/WabiSabi/Backend/Rounds/Arena.cs
+@@ -189,6 +189,11 @@ public partial class Arena : PeriodicRunner
+                        {
+                                if (round.Alices.All(x => x.ConfirmedConnection))
+                                {
++                                       foreach (Alice alice in round.Alices)
++                                       {
++                                               NotifyInput(round.Id, alice.Coin, alice.IsCoordinationFeeExempted);
++                                       }
++
+                                        SetRoundPhase(round, Phase.OutputRegistration);
+                                }
+                                else if (round.ConnectionConfirmationTimeFrame.HasExpired)
+@@ -247,11 +252,6 @@ public partial class Arena : PeriodicRunner
+ 
+                                if (allReady || phaseExpired)
+                                {
+-                                       foreach (Alice alice in round.Alices)
+-                                       {
+-                                               NotifyInput(round.Id, alice.Coin, alice.IsCoordinationFeeExempted);
+-                                       }
+-
+                                        var coinjoin = round.Assert<ConstructionState>();
+ 
+                                        round.LogInfo($"{coinjoin.Inputs.Count()} inputs were added.");

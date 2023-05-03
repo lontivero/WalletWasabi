@@ -18,6 +18,8 @@ public interface IWallet
 	IKeyChain? KeyChain { get; }
 
 	IDestinationProvider DestinationProvider { get; }
+	OutputProvider OutputProvider => new OutputProvider(DestinationProvider);
+
 	int AnonScoreTarget { get; }
 	bool ConsolidationMode { get; }
 	TimeSpan FeeRateMedianTimeFrame { get; }

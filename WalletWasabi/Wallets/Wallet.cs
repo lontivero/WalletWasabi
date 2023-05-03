@@ -21,6 +21,7 @@ using WalletWasabi.Services;
 using WalletWasabi.Stores;
 using WalletWasabi.Userfacing;
 using WalletWasabi.WabiSabi.Client;
+using WalletWasabi.WabiSabi.Client.Batching;
 using WalletWasabi.WebClients.PayJoin;
 
 namespace WalletWasabi.Wallets;
@@ -48,6 +49,8 @@ public class Wallet : BackgroundService, IWallet
 		}
 
 		DestinationProvider = new InternalDestinationProvider(KeyManager);
+		BatchedPayments = new PaymentBatch();
+		OutputProvider = new PaymentAwareOutputProvider(DestinationProvider, BatchedPayments);
 	}
 
 	public event EventHandler<ProcessedResult>? WalletRelevantTransactionProcessed;
@@ -99,7 +102,9 @@ public class Wallet : BackgroundService, IWallet
 	public IKeyChain? KeyChain { get; }
 
 	public IDestinationProvider DestinationProvider { get; }
-
+	public OutputProvider OutputProvider { get; }  
+	public PaymentBatch BatchedPayments { get; }
+	
 	public int AnonScoreTarget => KeyManager.AnonScoreTarget;
 	public bool ConsolidationMode => false;
 
@@ -281,6 +286,13 @@ public class Wallet : BackgroundService, IWallet
 	/// <inheritdoc />
 	protected override Task ExecuteAsync(CancellationToken stoppingToken) => Task.CompletedTask;
 
+	public string BatchPayment(IDestination destination, Money amount)
+	{
+		var payment = new PendingPayment(destination, amount);
+		BatchedPayments.AddPendingPayment(payment);
+		return payment.Id.ToString();
+	}
+	
 	/// <param name="allowUnconfirmed">Allow to spend unconfirmed transactions, if necessary.</param>
 	/// <param name="allowedInputs">Only these inputs allowed to be used to build the transaction. The wallet must know the corresponding private keys.</param>
 	/// <exception cref="ArgumentException"></exception>

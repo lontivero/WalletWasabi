@@ -75,17 +75,12 @@ public class JsonRpcServer : BackgroundService
 						}
 						else
 						{
-							JsonRpcRequest[] requestsToProcess = allRpcRequests.Where(x =>
-							{
-								bool isStopRequest = x.Method == IJsonRpcService.StopRpcCommand;
+							static bool IsStopRequest(JsonRpcRequest req) =>
+								req.Method == IJsonRpcService.StopRpcCommand;
+							
+							var requestsToProcess = allRpcRequests.Where(x => !IsStopRequest(x)).ToArray(); 
 
-								if (isStopRequest)
-								{
-									stopRpcRequestReceived = true;
-								}
-
-								return !isStopRequest;
-							}).ToArray();
+							stopRpcRequestReceived |= allRpcRequests.Any(IsStopRequest);
 
 							if (requestsToProcess.Length > 0)
 							{

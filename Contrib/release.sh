@@ -199,7 +199,6 @@ chmod 0775 ${DEBIAN_BIN}/${EXECUTABLE_NAME}{,d}
 # Build the .deb package
 dpkg --build "${DEBIAN_PACKAGE_DIR}" "$PACKAGES_DIR/${PACKAGE_FILE_NAME_PREFIX}.deb"
 
-
 # Unstash changes if there were any
 if git stash list | head -1 | grep -q "$STASH_MESSAGE"; then
   git stash pop

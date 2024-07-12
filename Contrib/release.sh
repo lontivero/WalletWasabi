@@ -179,7 +179,7 @@ Keywords=bitcoin;wallet;crypto;blockchain;wasabi;privacy;anon;awesome;"
 # Write the content to the file
 DEBIAN_DESKTOP="${DEBIAN_USR}/share/applications/${EXECUTABLE_NAME}.desktop"
 echo "${DEBIAN_DESKTOP_CONTENT}" > $DEBIAN_DESKTOP
-#chmod 0644 $DEBIAN_DESKTOP
+chmod 0644 $DEBIAN_DESKTOP
 
 # Copy the build to into the debian package structure
 cp -r $BUILD_DIR/linux-x64 $DEBIAN_BIN/wasabiwallet
@@ -198,7 +198,6 @@ chmod 0775 ${DEBIAN_BIN}/${EXECUTABLE_NAME}{,d}
 
 # Build the .deb package
 dpkg --build "${DEBIAN_PACKAGE_DIR}" "$PACKAGES_DIR/${PACKAGE_FILE_NAME_PREFIX}.deb"
-
 
 # Unstash changes if there were any
 if git stash list | head -1 | grep -q "$STASH_MESSAGE"; then

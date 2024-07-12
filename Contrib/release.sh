@@ -179,7 +179,7 @@ Keywords=bitcoin;wallet;crypto;blockchain;wasabi;privacy;anon;awesome;"
 # Write the content to the file
 DEBIAN_DESKTOP="${DEBIAN_USR}/share/applications/${EXECUTABLE_NAME}.desktop"
 echo "${DEBIAN_DESKTOP_CONTENT}" > $DEBIAN_DESKTOP
-#chmod 0644 $DEBIAN_DESKTOP
+chmod 0644 $DEBIAN_DESKTOP
 
 # Copy the build to into the debian package structure
 cp -r $BUILD_DIR/linux-x64 $DEBIAN_BIN/wasabiwallet

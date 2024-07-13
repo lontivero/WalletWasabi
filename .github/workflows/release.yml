@@ -51,7 +51,7 @@ jobs:
 
     - name: Restore NuGet packages
       run: |
-        dotnet restore WalletWasabi.Fluent.Desktop.csproj
+        dotnet restore WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj
 
     - name: Build .wixproj
       run: |

@@ -67,6 +67,8 @@ for PLATFORM in "${PLATFORMS[@]}"; do
           --disable-parallel \
           --no-cache \
           --no-restore \
+          --property:PublishTrimmed=true \
+          --property:SelfContained=true \
           --property:VersionPrefix=$VERSION \
           --property:DebugType=none \
           --property:DebugSymbols=false \

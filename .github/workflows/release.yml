@@ -6,24 +6,60 @@ on:
       - 'v*'  # Triggers on tags that start with 'v'
 
 jobs:
-  run-script:
+  build-all:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
 
       - name: Run bash script
         run: sudo bash -x ./Contrib/release.sh
         env:
           ENV_VAR: value
 
-      - name: Upload artifact
-        uses: actions/upload-artifact@v3
+      - name: Upload zips, tar.gz and deb
+        uses: actions/upload-artifact@v4
         with:
           name: packages
           path: ./packages/*  # Adjust the path to your generated files
+          compression-level: 0
+          if-no-files-found: error
 
+      - name: Upload windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages
+          path: ./build/win-x64  # Adjust the path to your generated files
+          compression-level: 3
+          if-no-files-found: error
+
+  installer-for-windows:
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+
+    - name: Install WiX Toolset
+      run: |
+        choco install wixtoolset --version=3.11.2
+      shell: powershell
+
+    - name: Restore NuGet packages
+      run: |
+        dotnet restore WalletWasabi.Fluent.Desktop.csproj
+
+    - name: Build .wixproj
+      run: |
+        msbuild WalletWasabi.WindowsInstaller/WalletWasabi.WindowsInstaller.wixproj /p:Configuration=Release
+
+#  create-release:
+#    runs-on: ubuntu-latest
+#    steps:
 #      - name: Create GitHub Release
 #        id: create_release
 #        uses: actions/create-release@v1

@@ -46,7 +46,7 @@ jobs:
 
     - name: Install WiX Toolset
       run: |
-        choco install wixtoolset --version=3.11.2
+        choco install wixtoolset --version=3.14.1 --force
       shell: powershell
 
     - name: Restore NuGet packages

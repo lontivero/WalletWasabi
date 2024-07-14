@@ -49,6 +49,10 @@ jobs:
         choco install wixtoolset --version=3.14.1 --force
       shell: powershell
 
+    - name: Install MSBuild
+      run: |
+        choco install microsoft-build-tools
+
     - name: Restore NuGet packages
       run: |
         dotnet restore WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj

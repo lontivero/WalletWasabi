@@ -63,7 +63,7 @@ jobs:
         candle WalletWasabi.WindowsInstaller/Product.wxs -o wixbuild/Product.wxsobj
 
         # Link the .wixobj file to create the .msi installer
-        light wixbuild/*.wixobj -o wixbuild/project.msi
+        light wixbuild/Components.wixobj wixbuild/ComponentsGenerated.wixobj wixbuild/Directories.wxsobj wixbuild/Product.wxsobj -o wixbuild/project.msi
 
 #  create-release:
 #    runs-on: ubuntu-latest

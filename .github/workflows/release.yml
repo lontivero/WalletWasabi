@@ -52,23 +52,7 @@ jobs:
     - name: Restore NuGet packages
       run: |
         dotnet restore WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj
-        dotnet build WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj \
-          --configuration Release \
-          --runtime win-x64 \
-          --force \
-          --output ./build \
-          --self-contained true \
-          --disable-parallel \
-          --no-cache \
-          --no-restore \
-          --property:PublishTrimmed=true \
-          --property:SelfContained=true \
-          --property:VersionPrefix=2.1.0.1 \
-          --property:DebugType=none \
-          --property:DebugSymbols=false \
-          --property:ErrorReport=none \
-          --property:DocumentationFile='' \
-          --property:Deterministic=true
+        dotnet build WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj --configuration Release --runtime win-x64 --force --output ./build --self-contained true --disable-parallel --no-cache --no-restore --property:PublishTrimmed=true --property:SelfContained=true --property:VersionPrefix=2.1.0.1 --property:DebugType=none --property:DebugSymbols=false --property:ErrorReport=none --property:DocumentationFile='' --property:Deterministic=true
 
     - name: Build .wixproj
       run: |

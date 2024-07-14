@@ -49,17 +49,21 @@ jobs:
         choco install wixtoolset --version=3.14.1 --force
       shell: powershell
 
-    - name: Install MSBuild
-      run: |
-        choco install microsoft-build-tools
-
     - name: Restore NuGet packages
       run: |
         dotnet restore WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj
 
     - name: Build .wixproj
       run: |
-        msbuild WalletWasabi.WindowsInstaller/WalletWasabi.WindowsInstaller.wixproj /p:Configuration=Release
+        # Compile the .wxs file to .wixobj
+        mkdir -p wixbuild
+        candle WalletWasabi.WindowsInstaller/Components.wxs -o wixbuild/Components.wxsobj
+        candle WalletWasabi.WindowsInstaller/ComponentsGenerated.wxs -o wixbuild/ComponentsGenerated.wxsobj
+        candle WalletWasabi.WindowsInstaller/Directories.wxs -o wixbuild/Directories.wxsobj
+        candle WalletWasabi.WindowsInstaller/Product.wxs -o wixbuild/Product.wxsobj
+
+        # Link the .wixobj file to create the .msi installer
+        light wixbuild/*.wixobj -o wixbuild/project.msi
 
 #  create-release:
 #    runs-on: ubuntu-latest

@@ -52,18 +52,39 @@ jobs:
     - name: Restore NuGet packages
       run: |
         dotnet restore WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj
+        dotnet build WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj \
+          --configuration Release \
+          --runtime win-x64 \
+          --force \
+          --output ./build \
+          --self-contained true \
+          --disable-parallel \
+          --no-cache \
+          --no-restore \
+          --property:PublishTrimmed=true \
+          --property:SelfContained=true \
+          --property:VersionPrefix=2.1.0.1 \
+          --property:DebugType=none \
+          --property:DebugSymbols=false \
+          --property:ErrorReport=none \
+          --property:DocumentationFile='' \
+          --property:Deterministic=true
 
     - name: Build .wixproj
       run: |
+        # Set the base path and version as variables
+        BASE_PATH="./build"
+        BUILD_VERSION=2.1.0.1
+
         # Compile the .wxs file to .wixobj
         mkdir -p wixbuild
-        candle WalletWasabi.WindowsInstaller/Components.wxs -o wixbuild/Components.wxsobj
-        candle WalletWasabi.WindowsInstaller/ComponentsGenerated.wxs -o wixbuild/ComponentsGenerated.wxsobj
-        candle WalletWasabi.WindowsInstaller/Directories.wxs -o wixbuild/Directories.wxsobj
-        candle WalletWasabi.WindowsInstaller/Product.wxs -o wixbuild/Product.wxsobj
+        candle WalletWasabi.WindowsInstaller/Components.wxs -o wixbuild/Components.wxsobj -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION
+        candle WalletWasabi.WindowsInstaller/ComponentsGenerated.wxs -o wixbuild/ComponentsGenerated.wxsobj -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION
+        candle WalletWasabi.WindowsInstaller/Directories.wxs -o wixbuild/Directories.wxsobj-dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION
+        candle WalletWasabi.WindowsInstaller/Product.wxs -o wixbuild/Product.wxsobj -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION
 
         # Link the .wixobj file to create the .msi installer
-        light wixbuild/Components.wixobj wixbuild/ComponentsGenerated.wixobj wixbuild/Directories.wxsobj wixbuild/Product.wxsobj -o wixbuild/project.msi
+        light wixbuild/Components.wixobj wixbuild/ComponentsGenerated.wixobj wixbuild/Directories.wxsobj wixbuild/Product.wxsobj -o wixbuild/project.msi -b $BASE_PATH
 
 #  create-release:
 #    runs-on: ubuntu-latest

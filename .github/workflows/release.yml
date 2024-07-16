@@ -61,14 +61,14 @@ jobs:
         BUILD_VERSION=2.1.0.1
 
         # Compile the .wxs file to .wixobj
-        mkdir -p wixbuild
-        candle WalletWasabi.WindowsInstaller/Components.wxs -o wixbuild/Components.wxsobj -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION
-        candle WalletWasabi.WindowsInstaller/ComponentsGenerated.wxs -o wixbuild/ComponentsGenerated.wxsobj -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION
-        candle WalletWasabi.WindowsInstaller/Directories.wxs -o wixbuild/Directories.wxsobj-dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION
-        candle WalletWasabi.WindowsInstaller/Product.wxs -o wixbuild/Product.wxsobj -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION
+        candle WalletWasabi.WindowsInstaller/*.wxs
+
+        WIX_UI_EXTENSION_PATH=$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUIExtension.dll/')
+        WIX_UTIL_EXTENSION_PATH=$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUtilExtension.dll/')
 
         # Link the .wixobj file to create the .msi installer
-        light wixbuild/Components.wixobj wixbuild/ComponentsGenerated.wixobj wixbuild/Directories.wxsobj wixbuild/Product.wxsobj -o wixbuild/project.msi -b $BASE_PATH
+        light *.wixobj -loc WalletWasabi.WindowsInstaller/Common.wxl -ext $WIX_UI_EXTENSION_PATH -ext $WIX_UTIL_EXTENSION_PATH  -o installer.msi
+      shell: powershell
 
 #  create-release:
 #    runs-on: ubuntu-latest

@@ -64,11 +64,11 @@ jobs:
         # Compile the .wxs file to .wixobj
         candle WalletWasabi.WindowsInstaller/*.wxs -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION -dDesktopProjectDir=DESKTOP_PROJECT_DIR
 
-        WIX_UI_EXTENSION_PATH=$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUIExtension.dll/')
-        WIX_UTIL_EXTENSION_PATH=$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUtilExtension.dll/')
+        WIX_UI_EXTENSION_PATH="$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUIExtension.dll/')"
+        WIX_UTIL_EXTENSION_PATH="$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUtilExtension.dll/')"
 
         # Link the .wixobj file to create the .msi installer
-        light *.wixobj -loc WalletWasabi.WindowsInstaller/Common.wxl -ext $WIX_UI_EXTENSION_PATH -ext $WIX_UTIL_EXTENSION_PATH  -o installer.msi
+        light *.wixobj -loc WalletWasabi.WindowsInstaller/Common.wxl -ext "$WIX_UI_EXTENSION_PATH" -ext "$WIX_UTIL_EXTENSION_PATH"  -o installer.msi
       shell: bash
 
 #  create-release:

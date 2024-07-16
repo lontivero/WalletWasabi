@@ -250,6 +250,9 @@ mkdir -p "$BUILD_INSTALLER_DIR"
     -ext "$WIX_BIN_DIR/WixUIExtension.dll" \
     -ext "$WIX_BIN_DIR/WixUtilExtension.dll" \
     -out $PACKAGES_DIR/$PACKAGE_FILE_NAME_PREFIX.msi
+
+# Remove unwanted file
+rm $PACKAGES_DIR/*.wixpdb
 fi
 
 #signtool sign /d "Wasabi Wallet" /f Certificate.pfx  /p ${CERTIFICATE_PASSWORD}} /t http://timestamp.digicert.com /v $PACKAGES_DIR/$PACKAGE_FILE_NAME_PREFIX.msi

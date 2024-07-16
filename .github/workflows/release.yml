@@ -59,9 +59,10 @@ jobs:
         # Set the base path and version as variables
         export BASE_PATH="./build"
         export BUILD_VERSION="2.1.0.1"
+        export DESKTOP_PROJECT_DIR="WalletWasabi.Fluent.Desktop"
 
         # Compile the .wxs file to .wixobj
-        candle WalletWasabi.WindowsInstaller/*.wxs -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION
+        candle WalletWasabi.WindowsInstaller/*.wxs -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION -dDesktopProjectDir=DESKTOP_PROJECT_DIR
 
         WIX_UI_EXTENSION_PATH=$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUIExtension.dll/')
         WIX_UTIL_EXTENSION_PATH=$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUtilExtension.dll/')

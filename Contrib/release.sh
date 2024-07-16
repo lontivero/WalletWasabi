@@ -43,10 +43,10 @@ PACKAGES_DIR="packages"
 # Common name for all packages
 PACKAGE_FILE_NAME_PREFIX="Wasabi-$VERSION"
 
-if [[ "$RUNNER_OS" == "Linux" || "$RUNNER_OS" == "macOS" ]]; then
-  ZIP="zip -r"
-else
+if [[ "$RUNNER_OS" == "Windows" ]]; then
   ZIP="7z.exe a"
+else
+  ZIP="zip -r"
 fi
 
 if [ "$1" = "wininstaller" ]; then
@@ -252,7 +252,7 @@ mkdir -p "$BUILD_INSTALLER_DIR"
     -out $PACKAGES_DIR/$PACKAGE_FILE_NAME_PREFIX.msi
 fi
 
-#signtool sign /d "Wasabi Wallet" /f ${SIGNING_CERTIFICATE} /p ${CERTIFICATE_PASSWORD}} /t http://timestamp.digicert.com /v $PACKAGES_DIR/$PACKAGE_FILE_NAME_PREFIX.msi
+#signtool sign /d "Wasabi Wallet" /f Certificate.pfx  /p ${CERTIFICATE_PASSWORD}} /t http://timestamp.digicert.com /v $PACKAGES_DIR/$PACKAGE_FILE_NAME_PREFIX.msi
 
 # Unstash changes if there were any
 if git stash list | head -1 | grep -q "$STASH_MESSAGE"; then

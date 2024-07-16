@@ -57,8 +57,7 @@ jobs:
 
 #    - name: Set up environment
 #      run: |
-#        mkdir -p certs
-#        echo "${{ secrets.SIGNING_CERTIFICATE }}" | base64 -d > certs/Certificate.pfx
+#        echo "${{ secrets.SIGNING_CERTIFICATE }}" | base64 -d >Certificate.pfx
 
     - name: Build Windows Installer
       shell: bash
@@ -90,11 +89,19 @@ jobs:
         with:
           name: packages-for-windows
           path: ./packages
+
       - name: List downloaded files
         run: ls -l ./packages
+
       - name: PGP signing
         shell: bash
         run: |
+          echo "${{ secrets.GPG_PRIVATE_KEY }}" > private.key
+          gpg --import private.key
+          rm private.key
+          echo "${{ secrets.GPG_PASSPHRASE }}" > passphrase.txt
+          export GPG_TTY=$(tty)
+
           for FILE in "./packages/*"; do
             gpg --armor --detach-sign $FILE
             sha256sum $FILE >> SHA256SUMS

@@ -57,11 +57,11 @@ jobs:
     - name: Build .wixproj
       run: |
         # Set the base path and version as variables
-        BASE_PATH="./build"
-        BUILD_VERSION=2.1.0.1
+        export BASE_PATH="./build"
+        export BUILD_VERSION="2.1.0.1"
 
         # Compile the .wxs file to .wixobj
-        candle WalletWasabi.WindowsInstaller/*.wxs
+        candle WalletWasabi.WindowsInstaller/*.wxs -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION
 
         WIX_UI_EXTENSION_PATH=$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUIExtension.dll/')
         WIX_UTIL_EXTENSION_PATH=$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUtilExtension.dll/')

@@ -11,6 +11,7 @@
 #  and sign the installers for windows (win ci job) and generate and sign the one    #
 #  for macOS (osx job).                                                              #
 #------------------------------------------------------------------------------------#
+set -x
 
 STASH_MESSAGE="Stashed changes for script execution"
 # Check if there are any uncommitted changes

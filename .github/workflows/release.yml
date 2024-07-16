@@ -43,7 +43,7 @@ jobs:
 
     - name: Build .wixproj
       run: |
-        run: sudo bash -x ./Contrib/release.sh wininstaller
+        sudo bash -x ./Contrib/release.sh wininstaller
       shell: bash
 
     - name: Upload windows installer

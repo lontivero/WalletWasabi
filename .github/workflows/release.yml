@@ -26,14 +26,6 @@ jobs:
           compression-level: 0
           if-no-files-found: error
 
-      - name: Upload windows build
-        uses: actions/upload-artifact@v4
-        with:
-          name: packages
-          path: ./build/win-x64  # Adjust the path to your generated files
-          compression-level: 3
-          if-no-files-found: error
-
   installer-for-windows:
     runs-on: windows-latest
 
@@ -49,27 +41,18 @@ jobs:
         choco install wixtoolset --version=3.14.1 --force
       shell: powershell
 
-    - name: Restore NuGet packages
-      run: |
-        dotnet restore WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj
-        dotnet build WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj --configuration Release --runtime win-x64 --force --output ./build --self-contained true --disable-parallel --no-cache --no-restore --property:SelfContained=true --property:VersionPrefix=2.1.0.1 --property:DebugType=none --property:DebugSymbols=false --property:ErrorReport=none --property:DocumentationFile='' --property:Deterministic=true
-
     - name: Build .wixproj
       run: |
-        # Set the base path and version as variables
-        export BASE_PATH="./build"
-        export BUILD_VERSION="2.1.0.1"
-        export DESKTOP_PROJECT_DIR="WalletWasabi.Fluent.Desktop"
-
-        # Compile the .wxs file to .wixobj
-        candle WalletWasabi.WindowsInstaller/*.wxs -dBasePath=$BASE_PATH -dBuildVersion=$BUILD_VERSION -dDesktopProjectDir=$DESKTOP_PROJECT_DIR
-
-        WIX_UI_EXTENSION_PATH="$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUIExtension.dll/')"
-        WIX_UTIL_EXTENSION_PATH="$(where candle.exe | head -n 1 | sed 's/candle.exe/WixUtilExtension.dll/')"
-
-        # Link the .wixobj file to create the .msi installer
-        light *.wixobj -loc WalletWasabi.WindowsInstaller/Common.wxl -ext "$WIX_UI_EXTENSION_PATH" -ext "$WIX_UTIL_EXTENSION_PATH"  -o installer.msi
+        run: sudo bash -x ./Contrib/release.sh wininstaller
       shell: bash
+
+    - name: Upload windows installer
+      uses: actions/upload-artifact@v4
+      with:
+        name: packages
+        path: ./packages/*  # Adjust the path to your generated files
+        compression-level: 0
+        if-no-files-found: error
 
 #  create-release:
 #    runs-on: ubuntu-latest

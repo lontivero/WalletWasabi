@@ -18,11 +18,21 @@ jobs:
         env:
           ENV_VAR: value
 
-      - name: Upload zips, tar.gz and deb
+      - name: Upload debian package
         uses: actions/upload-artifact@v4
         with:
-          name: packages
-          path: ./packages/*  # Adjust the path to your generated files
+          name: packages-for-debian
+          path: ./packages/*.deb  # Adjust the path to your generated files
+          compression-level: 0
+          if-no-files-found: error
+
+      - name: Upload zip & tar package
+        uses: actions/upload-artifact@v4
+        with:
+          name: packages-zip-tar
+          path: |
+            ./packages/*
+            !./packages/*.deb
           compression-level: 0
           if-no-files-found: error
 
@@ -51,7 +61,7 @@ jobs:
     - name: Upload windows installer
       uses: actions/upload-artifact@v4
       with:
-        name: packages
+        name: packages-for-windows
         path: ./packages/*  # Adjust the path to your generated files
         compression-level: 0
         if-no-files-found: error

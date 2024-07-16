@@ -84,7 +84,6 @@ for PLATFORM in "${PLATFORMS[@]}"; do
           --output $OUTPUT_DIR \
           --self-contained true \
           --disable-parallel \
-          --nowarn \
           --no-cache \
           --no-restore \
           --property:SelfContained=true \
@@ -93,7 +92,8 @@ for PLATFORM in "${PLATFORMS[@]}"; do
           --property:DebugSymbols=false \
           --property:ErrorReport=none \
           --property:DocumentationFile='' \
-          --property:Deterministic=true
+          --property:Deterministic=true \
+          /clp:ErrorsOnly
 
   # Determine executable file extension based on platform
   EXE_FILE_EXTENSION=''

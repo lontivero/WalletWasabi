@@ -68,7 +68,7 @@ jobs:
 
         # Link the .wixobj file to create the .msi installer
         light *.wixobj -loc WalletWasabi.WindowsInstaller/Common.wxl -ext $WIX_UI_EXTENSION_PATH -ext $WIX_UTIL_EXTENSION_PATH  -o installer.msi
-      shell: powershell
+      shell: bash
 
 #  create-release:
 #    runs-on: ubuntu-latest

@@ -126,7 +126,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   if [[ "${PLATFORM_PREFIX}" == "lin" ]]; then
     tar -pczvf $PACKAGES_DIR/$PACKAGE_FILE_NAME.tar.gz $OUTPUT_DIR
   else
-    "$ZIP" $PACKAGES_DIR/$PACKAGE_FILE_NAME.zip $OUTPUT_DIR
+    $ZIP $PACKAGES_DIR/$PACKAGE_FILE_NAME.zip $OUTPUT_DIR
   fi
 done
 

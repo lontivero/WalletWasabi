@@ -6,7 +6,7 @@ on:
       - 'v*'  # Triggers on tags that start with 'v'
 
 jobs:
-  build-all:
+  debian-package-and-zips:
     runs-on: ubuntu-latest
 
     steps:

@@ -42,6 +42,12 @@ PACKAGES_DIR="packages"
 # Common name for all packages
 PACKAGE_FILE_NAME_PREFIX="Wasabi-$VERSION"
 
+if [[ "$RUNNER_OS" == "Linux" ]]; then
+  ZIP="zip -r"
+else
+  ZIP="7z.exe a"
+fi
+
 if [ "$1" = "wininstaller" ]; then
   # Supported platforms
   PLATFORMS=("win-x64")
@@ -119,7 +125,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
   if [[ "${PLATFORM_PREFIX}" == "lin" ]]; then
     tar -pczvf $PACKAGES_DIR/$PACKAGE_FILE_NAME.tar.gz $OUTPUT_DIR
   else
-    zip -r $PACKAGES_DIR/$PACKAGE_FILE_NAME.zip $OUTPUT_DIR
+    "$ZIP" $PACKAGES_DIR/$PACKAGE_FILE_NAME.zip $OUTPUT_DIR
   fi
 done
 
@@ -227,7 +233,7 @@ BUILD_INSTALLER_DIR="$BUILD_DIR/win-installer"
 mkdir -p BUILD_INSTALLER_DIR
 
 # Compile the .wxs file to .wixobj
-$CANDLE_EXE \
+"$CANDLE_EXE" \
     $WINDOWS_INSTALLER_DIR/*.wxs \
     -dBasePath=$BUILD_DIR \
     -dBuildVersion=$VERSION \
@@ -237,7 +243,7 @@ $CANDLE_EXE \
     -out "$BUILD_INSTALLER_DIR"
 
 # Link the .wixobj file to create the .msi installer
-$LIGHT_EXE \
+"$LIGHT_EXE" \
     $WINDOWS_INSTALLER_DIR/*.wixobj \
     -loc $WINDOWS_INSTALLER_DIR/Common.wxl \
     -ext "$WIX_BIN_DIR/WixUIExtension.dll" \

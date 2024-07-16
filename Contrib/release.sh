@@ -84,6 +84,7 @@ for PLATFORM in "${PLATFORMS[@]}"; do
           --output $OUTPUT_DIR \
           --self-contained true \
           --disable-parallel \
+          --nowarn \
           --no-cache \
           --no-restore \
           --property:SelfContained=true \

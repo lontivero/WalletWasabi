@@ -231,7 +231,7 @@ CANDLE_EXE="$WIX_BIN_DIR/"candle
 LIGHT_EXE="$WIX_BIN_DIR"/light
 BUILD_INSTALLER_DIR="$BUILD_DIR/win-installer"
 
-mkdir -p BUILD_INSTALLER_DIR
+mkdir -p "$BUILD_INSTALLER_DIR"
 
 # Compile the .wxs file to .wixobj
 "$CANDLE_EXE" \
@@ -240,12 +240,11 @@ mkdir -p BUILD_INSTALLER_DIR
     -dBuildVersion=$VERSION \
     -dDesktopProjectDir=$DESKTOP \
     -dConfiguration=Release \
-    -dPlatform=win-x64 \
-    -out "$BUILD_INSTALLER_DIR"
+    -dPlatform=win-x64
 
 # Link the .wixobj file to create the .msi installer
 "$LIGHT_EXE" \
-    $WINDOWS_INSTALLER_DIR/*.wixobj \
+    *.wixobj \
     -loc $WINDOWS_INSTALLER_DIR/Common.wxl \
     -ext "$WIX_BIN_DIR/WixUIExtension.dll" \
     -ext "$WIX_BIN_DIR/WixUtilExtension.dll" \

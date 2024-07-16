@@ -42,8 +42,10 @@ jobs:
       shell: powershell
 
     - name: Build .wixproj
+      shell: bash
       run: |
-        sudo bash -x ./Contrib/release.sh wininstaller
+        set -x
+        ./Contrib/release.sh wininstaller
 
     - name: Upload windows installer
       uses: actions/upload-artifact@v4

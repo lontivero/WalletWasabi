@@ -95,7 +95,7 @@ jobs:
       - name: PGP signing
         shell: bash
         run: |
-          for FILE in "./packages/*; do
+          for FILE in "./packages/*"; do
             gpg --armor --detach-sign $FILE
             sha256sum $FILE >> SHA256SUMS
           done

@@ -43,7 +43,7 @@ PACKAGES_DIR="packages"
 # Common name for all packages
 PACKAGE_FILE_NAME_PREFIX="Wasabi-$VERSION"
 
-if [[ "$RUNNER_OS" == "Linux" ]]; then
+if [[ "$RUNNER_OS" == "Linux" || "$RUNNER_OS" == "macOS" ]]; then
   ZIP="zip -r"
 else
   ZIP="7z.exe a"

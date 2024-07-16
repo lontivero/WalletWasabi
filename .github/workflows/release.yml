@@ -55,10 +55,10 @@ jobs:
       run: |
         choco install windows-sdk-10-version-1903-all
 
-    - name: Set up environment
-      run: |
-        mkdir -p certs
-        echo "${{ secrets.SIGNING_CERTIFICATE }}" | base64 -d > certs/Certificate.pfx
+#    - name: Set up environment
+#      run: |
+#        mkdir -p certs
+#        echo "${{ secrets.SIGNING_CERTIFICATE }}" | base64 -d > certs/Certificate.pfx
 
     - name: Build Windows Installer
       shell: bash

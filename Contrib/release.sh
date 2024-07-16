@@ -252,7 +252,7 @@ mkdir -p "$BUILD_INSTALLER_DIR"
     -out $PACKAGES_DIR/$PACKAGE_FILE_NAME_PREFIX.msi
 fi
 
-signtool sign /d "Wasabi Wallet" /f ${SIGNING_CERTIFICATE} /p ${CERTIFICATE_PASSWORD}} /t http://timestamp.digicert.com /v $PACKAGES_DIR/$PACKAGE_FILE_NAME_PREFIX.msi
+#signtool sign /d "Wasabi Wallet" /f ${SIGNING_CERTIFICATE} /p ${CERTIFICATE_PASSWORD}} /t http://timestamp.digicert.com /v $PACKAGES_DIR/$PACKAGE_FILE_NAME_PREFIX.msi
 
 # Unstash changes if there were any
 if git stash list | head -1 | grep -q "$STASH_MESSAGE"; then

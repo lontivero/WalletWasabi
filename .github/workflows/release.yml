@@ -86,10 +86,12 @@ jobs:
           name: packages-zip-tar
           path: ./packages
       - name: Download windows packages
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: packages-for-windows
           path: ./packages
+      - name: List downloaded files
+        run: ls -l ./packages
       - name: PGP signing
         shell: bash
         run: |

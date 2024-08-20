@@ -30,7 +30,6 @@ using WalletWasabi.Tor.Socks5.Pool.Circuits;
 using WalletWasabi.Tor.StatusChecker;
 using WalletWasabi.WabiSabi.Client;
 using WalletWasabi.WabiSabi.Client.Banning;
-using WalletWasabi.WabiSabi.Client.RoundStateAwaiters;
 using WalletWasabi.Wallets;
 using WalletWasabi.WebClients.BlockstreamInfo;
 using WalletWasabi.WebClients.Wasabi;
@@ -39,7 +38,6 @@ using WalletWasabi.WebClients.BuyAnything;
 using WalletWasabi.WebClients.ShopWare;
 using WalletWasabi.Wallets.FilterProcessor;
 using WalletWasabi.Models;
-using WalletWasabi.WabiSabi.Models;
 
 namespace WalletWasabi.Daemon;
 
@@ -91,7 +89,6 @@ public class Global
 		WasabiSynchronizer wasabiSynchronizer = HostedServices.Get<WasabiSynchronizer>();
 
 		TorStatusChecker = new TorStatusChecker(TimeSpan.FromHours(6), HttpClientFactory.NewHttpClient(Mode.DefaultCircuit), new XmlIssueListParser());
-		RoundStateUpdaterCircuit = new PersonCircuit();
 
 		Cache = new MemoryCache(new MemoryCacheOptions
 		{
@@ -183,7 +180,6 @@ public class Global
 
 	public Uri? OnionServiceUri { get; private set; }
 
-	private PersonCircuit RoundStateUpdaterCircuit { get; }
 	private AllTransactionStore AllTransactionStore { get; }
 	private IndexStore IndexStore { get; }
 
@@ -402,14 +398,8 @@ public class Global
 
 	private void RegisterCoinJoinComponents()
 	{
-		if (CoordinatorHttpClientFactory is not null)
-		{
-			Tor.Http.IHttpClient roundStateUpdaterHttpClient = CoordinatorHttpClientFactory.NewHttpClient(Mode.SingleCircuitPerLifetime, RoundStateUpdaterCircuit);
-			HostedServices.Register<RoundStateUpdater>(() => new RoundStateUpdater(TimeSpan.FromSeconds(10), new WabiSabiHttpApiClient(roundStateUpdaterHttpClient)), "Round info updater");
-		}
-
 		var coinJoinConfiguration = new CoinJoinConfiguration(Config.CoordinatorIdentifier, Config.MaxCoinjoinMiningFeeRate, Config.AbsoluteMinInputCount, AllowSoloCoinjoining: false);
-		HostedServices.Register<CoinJoinManager>(() => new CoinJoinManager(WalletManager, CoordinatorHttpClientFactory is null ? null : HostedServices.Get<RoundStateUpdater>(), CoordinatorHttpClientFactory, HostedServices.Get<WasabiSynchronizer>(), coinJoinConfiguration, CoinPrison), "CoinJoin Manager");
+		HostedServices.Register<CoinJoinManager>(() => new CoinJoinManager(WalletManager, CoordinatorHttpClientFactory, HostedServices.Get<WasabiSynchronizer>(), coinJoinConfiguration, CoinPrison), "CoinJoin Manager");
 	}
 
 	private void WalletManager_WalletStateChanged(object? sender, WalletState e)
@@ -490,9 +480,6 @@ public class Global
 					backgroundServices.Dispose();
 					Logger.LogInfo("Stopped background services.");
 				}
-
-				RoundStateUpdaterCircuit.Dispose();
-				Logger.LogInfo($"Disposed {nameof(RoundStateUpdaterCircuit)}.");
 
 				if (HttpClientFactory is { } httpClientFactory)
 				{

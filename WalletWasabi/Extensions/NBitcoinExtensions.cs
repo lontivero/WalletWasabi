@@ -154,7 +154,7 @@ public static class NBitcoinExtensions
 		var lookup = new Dictionary<uint256, TransactionDependencyNode>();
 		foreach (var tx in txs)
 		{
-			lookup.Add(tx.GetHash(), new TransactionDependencyNode { Transaction = tx });
+			lookup.Add(tx.GetHash(), new TransactionDependencyNode(tx));
 		}
 
 		foreach (var node in lookup.Values)

@@ -112,14 +112,23 @@ public class WalletFilterProcessor : BackgroundService
 			{
 				// Wait until downloaded.
 				var currentBlock = await _blockProvider(filter.Header.BlockHash, cancel).ConfigureAwait(false);
-				var txsToProcess = new List<SmartTransaction>();
-				for (int i = 0; i < currentBlock.Transactions.Count; i++)
+				if (currentBlock is { })
 				{
-					Transaction tx = currentBlock.Transactions[i];
-					txsToProcess.Add(new SmartTransaction(tx, height, currentBlock.GetHash(), i, firstSeen: currentBlock.Header.BlockTime, labels: _bitcoinStore.MempoolService.TryGetLabel(tx.GetHash())));
-				}
+					var txsToProcess = new List<SmartTransaction>();
+					for (int i = 0; i < currentBlock.Transactions.Count; i++)
+					{
+						Transaction tx = currentBlock.Transactions[i];
+						txsToProcess.Add(new SmartTransaction(tx, height, currentBlock.GetHash(), i,
+							firstSeen: currentBlock.Header.BlockTime,
+							labels: _bitcoinStore.MempoolService.TryGetLabel(tx.GetHash())));
+					}
 
-				_transactionProcessor.Process(txsToProcess);
+					_transactionProcessor.Process(txsToProcess);
+				}
+				else
+				{
+					throw new InvalidOperationException($"Block {filter.Header.BlockHash} was not found.");
+				}
 			}
 		}
 		return matchFound;

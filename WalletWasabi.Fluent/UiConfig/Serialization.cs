@@ -49,22 +49,25 @@ public static class UiConfigDecode
 		Decode.String.Map(System.Version.Parse);
 
     public static Decoder<UiConfig> UiConfig(string filePath) =>
-        Object(get => new UiConfig(filePath)
+        Object(get =>
         {
-	        Oobe = get.Required("Oobe", Decode.Bool),
-	        LastVersionHighlightsDisplayed = get.Required("LastVersionHighlightsDisplayed", Version),
-	        WindowState = get.Required("WindowState", Decode.String),
-	        FeeTarget = get.Required("FeeTarget", Decode.Int),
-	        Autocopy = get.Required("Autocopy", Decode.Bool),
-	        AutoPaste = get.Required("AutoPaste", Decode.Bool),
-	        IsCustomChangeAddress = get.Required("IsCustomChangeAddress", Decode.Bool),
-	        PrivacyMode = get.Required("PrivacyMode", Decode.Bool),
-	        DarkModeEnabled = get.Required("DarkModeEnabled", Decode.Bool),
-	        LastSelectedWallet = get.Optional("LastSelectedWallet", Decode.String),
-	        RunOnSystemStartup = get.Required("RunOnSystemStartup", Decode.Bool),
-	        HideOnClose = get.Required("HideOnClose", Decode.Bool),
-	        SendAmountConversionReversed = get.Required("SendAmountConversionReversed", Decode.Bool),
-	        WindowWidth = get.Optional("WindowWidth", Decode.Double),
-	        WindowHeight = get.Optional("WindowHeight", Decode.Double)
+	        var oobe = get.Required("Oobe", Decode.Bool);
+	        var lastVersionHighlightsDisplayed = get.Required("LastVersionHighlightsDisplayed", Version);
+	        var windowState = get.Required("WindowState", Decode.String);
+	        var feeTarget = get.Required("FeeTarget", Decode.Int);
+	        var autocopy = get.Required("Autocopy", Decode.Bool);
+	        var autoPaste = get.Required("AutoPaste", Decode.Bool);
+	        var isCustomChangeAddress = get.Required("IsCustomChangeAddress", Decode.Bool);
+	        var privacyMode = get.Required("PrivacyMode", Decode.Bool);
+	        var darkModeEnabled = get.Required("DarkModeEnabled", Decode.Bool);
+	        var lastSelectedWallet = get.Optional("LastSelectedWallet", Decode.String);
+	        var runOnSystemStartup = get.Required("RunOnSystemStartup", Decode.Bool);
+	        var hideOnClose = get.Required("HideOnClose", Decode.Bool);
+	        var sendAmountConversionReversed = get.Required("SendAmountConversionReversed", Decode.Bool);
+	        var windowWidth = get.Optional("WindowWidth", Decode.Double, 0);
+	        var windowHeight = get.Optional("WindowHeight", Decode.Double, 0);
+	        return new UiConfig(filePath, privacyMode, isCustomChangeAddress, autocopy, darkModeEnabled,
+		        lastSelectedWallet, windowState, runOnSystemStartup, oobe, lastVersionHighlightsDisplayed, hideOnClose,
+		        autoPaste, feeTarget, sendAmountConversionReversed, windowWidth > 0 ? windowWidth : null, windowHeight > 0 ? windowHeight : null);
         });
 }

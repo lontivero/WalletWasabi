@@ -325,10 +325,10 @@ public partial class ApplicationSettings : ReactiveObject, IApplicationSettings
 
 		var newPersistentConfig = defaultConfig with {CoordinatorUri = CoordinatorUri};
 
-		var newUiConfig = new UiConfig
+		var newUiConfig = new UiConfig(_uiConfig.FilePath)
 		{
-			Oobe = Oobe,
-			LastVersionHighlightsDisplayed = LastVersionHighlightsDisplayed,
+			Oobe= Oobe,
+			LastVersionHighlightsDisplayed= LastVersionHighlightsDisplayed
 		};
 
 		ApplyConfigs(newPersistentConfig, newUiConfig);

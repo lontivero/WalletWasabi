@@ -192,7 +192,7 @@ public class Global
 	private RpcClientBase? ConfigureBitcoinRpcClient()
 	{
 		var credentialString = Config.BitcoinRpcCredentialString;
-		if (Config.UseBitcoinRpc && !string.IsNullOrWhiteSpace(credentialString))
+		if (!string.IsNullOrWhiteSpace(credentialString))
 		{
 			// In case the credential string is malformed, we replace it with a valid but extremely improbable one.
 			// That results in the creation of a rpc instance that will fail to connect. In that way the RpcMonitor
@@ -299,13 +299,6 @@ public class Global
 				{
 					return new BitcoinRpcFilterProvider(_bitcoinRpcClient);
 				}
-			}
-
-			if (!string.IsNullOrEmpty(Config.BackendUri))
-			{
-				var maxFiltersToSync = Network == Network.Main ? 1000 : 10000; // On testnet, filters are empty, so it's faster to query them together
-				var indexerHttpClientFactory = new IndexerHttpClientFactory(new Uri(Config.BackendUri), BuildHttpClientFactory());
-				return new WebApiFilterProvider(maxFiltersToSync, indexerHttpClientFactory, EventBus);
 			}
 
 			return null;

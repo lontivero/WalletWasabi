@@ -90,17 +90,17 @@ public class WalletFilterProcessor : BackgroundService
 	/// </summary>
 	/// <param name="isBip158"></param>
 	/// <returns>Keys to test against this filter.</returns>
-	private IEnumerable<byte[]> GetScriptPubKeysToTest(bool isBip158)
+	private IEnumerable<byte[]> GetScriptPubKeysToTest()
 	{
 		// Wasabi doesn't build bip158 filters and also uses the compact representation of the scriptPubKeys
-		return _keyManager.UnsafeGetSynchronizationInfos(isBip158);
+		return _keyManager.UnsafeGetSynchronizationInfos();
 	}
 
 	private async Task<bool> ProcessFilterModelAsync(FilterModel filter, CancellationToken cancel)
 	{
 		var height = new ChainHeight(filter.Header.Height);
 
-		var toTestKeys = GetScriptPubKeysToTest(filter.Filter.IsBip158());
+		var toTestKeys = GetScriptPubKeysToTest();
 
 		var matchFound = false;
 		if (toTestKeys.Any())

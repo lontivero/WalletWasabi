@@ -32,7 +32,7 @@ public record SmartHeader
 
 	private static SmartHeader StartingHeaderSegwitMain { get; } = new SmartHeader(
 		new uint256("0000000000000000001c8018d9cb3b742ef25114f27563e3fc4a1902167f9893"),
-		new uint256("000000000000000000cbeff0b533f8e1189cf09dfbebf57a8ebe349362811b80"),
+		new uint256("8950b517b9246048f9fd27adeda6802e5b6d08bc7a94f628619c2d4dc4bb4d67"),
 		481824,
 		1503539857);
 

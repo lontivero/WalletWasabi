@@ -35,9 +35,6 @@ public class Config
 			[ nameof(Network)] = (
 				"The Bitcoin network to use: main, testnet, signet, or regtest",
 				GetNetworkValue("Network", PersistentConfig.Network.ToString(), [])),
-			[ nameof(BackendUri)] = (
-				"The indexer server's URL to connect to",
-				GetStringValue("BackendUri", PersistentConfig.IndexerUri, cliArgs)),
 			[ nameof(CoordinatorUri)] = (
 				"The coordinator server's URL to connect to",
 				GetStringValue("CoordinatorUri", PersistentConfig.CoordinatorUri, cliArgs)),
@@ -62,9 +59,6 @@ public class Config
 			[ nameof(DownloadNewVersion)] = (
 				"Automatically download any new released version of Wasabi",
 				GetBoolValue("DownloadNewVersion", PersistentConfig.DownloadNewVersion, cliArgs)),
-			[ nameof(UseBitcoinRpc)] = (
-				"Connect to bitcoin node rpc server",
-				GetBoolValue("UseBitcoinRpc", PersistentConfig.UseBitcoinRpc, cliArgs)),
 			[ nameof(BitcoinRpcCredentialString)] = (
 				"Credentials for authenticating against the bitcoin node rpc server",
 				GetStringValue("BitcoinRpcCredentialString", PersistentConfig.BitcoinRpcCredentialString, cliArgs)),
@@ -151,7 +145,6 @@ public class Config
 	public string[] CliArgs { get; }
 	public Network Network => GetEffectiveValue<NetworkValue, Network>(nameof(Network));
 
-	public string BackendUri => GetEffectiveValue<StringValue, string>(nameof(BackendUri));
 	public string CoordinatorUri => GetEffectiveValue<StringValue, string>(nameof(CoordinatorUri));
 	public TorMode UseTor => Network == Network.RegTest ? TorMode.Disabled : GetEffectiveValue<TorModeValue, TorMode>(nameof(UseTor));
 	public string? TorFolder => GetEffectiveValue<NullableStringValue, string?>(nameof(TorFolder));
@@ -160,7 +153,6 @@ public class Config
 	public string[] TorBridges => GetEffectiveValue<StringArrayValue, string[]>(nameof(TorBridges));
 	public bool TerminateTorOnExit => GetEffectiveValue<BoolValue, bool>(nameof(TerminateTorOnExit));
 	public bool DownloadNewVersion => GetEffectiveValue<BoolValue, bool>(nameof(DownloadNewVersion));
-	public bool UseBitcoinRpc => GetEffectiveValue<BoolValue, bool>(nameof(UseBitcoinRpc));
 	public string BitcoinRpcCredentialString => GetEffectiveValue<StringValue, string>(nameof(BitcoinRpcCredentialString));
 	public string BitcoinRpcUri => GetEffectiveValue<StringValue, string>(nameof(BitcoinRpcUri));
 	public bool JsonRpcServerEnabled => GetEffectiveValue<BoolValue, bool>(nameof(JsonRpcServerEnabled));

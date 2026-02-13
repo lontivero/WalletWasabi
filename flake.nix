@@ -19,26 +19,13 @@
           src = ./.;
         };
 
-        # Build Wasabi Backend
-        buildBackend = buildWasabiModule.overrideAttrs (oldAttrs: rec {
-          pname = "WalletWasabi.Backend";
-          projectFile = "WalletWasabi.Backend/WalletWasabi.Backend.csproj";
-          executables = [ "WalletWasabi.Backend" ];
-          runtimeDeps = [ pkgs.openssl pkgs.zlib ];
-          postInstall = ''
-            ln -s ${deployScript}/bin/deploy $out
-          '';
-        });
-
         # Build all components and run tests (CI)
         buildEverything = buildWasabiModule.overrideAttrs (oldAttrs: rec {
           pname = "WalletWasabi";
           projectFile = [
-             "WalletWasabi.Backend/WalletWasabi.Backend.csproj"
              "WalletWasabi.Coordinator/WalletWasabi.Coordinator.csproj"
              "WalletWasabi.Fluent.Desktop/WalletWasabi.Fluent.Desktop.csproj"];
           executables = [
-            "WalletWasabi.Backend"
             "WalletWasabi.Coordinator"
             "WalletWasabi.Fluent.Desktop" ];
           runtimeDeps = with pkgs; [
@@ -56,7 +43,6 @@
 
           preFixup = ''
             wrapDotnetProgram $out/lib/${pname}/WalletWasabi.Fluent.Desktop $out/bin/wasabi
-            wrapDotnetProgram $out/lib/${pname}/WalletWasabi.Backend $out/bin/wasabi-indexer
             wrapDotnetProgram $out/lib/${pname}/WalletWasabi.Coordinator $out/bin/wasabi-coordinator
           '';
 

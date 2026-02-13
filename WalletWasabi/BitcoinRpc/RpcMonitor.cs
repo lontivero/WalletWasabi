@@ -54,6 +54,10 @@ public static class RpcMonitor
 			{
 				return await rpcClient.GetPeersInfoAsync(cancel).ConfigureAwait(false);
 			}
+			catch (HttpRequestException ex) when (ex is {StatusCode: HttpStatusCode.Forbidden})
+			{
+				return Result<PeerInfo[], RPCResponse>.Ok([]);
+			}
 			catch (RPCException e)
 			{
 				return Result<PeerInfo[], RPCResponse>.Fail(e.RPCResult);

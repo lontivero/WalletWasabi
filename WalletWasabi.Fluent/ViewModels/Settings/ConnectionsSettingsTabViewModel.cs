@@ -32,7 +32,6 @@ public partial class ConnectionsSettingsTabViewModel : RoutableViewModel
 	public ConnectionsSettingsTabViewModel(IApplicationSettings settings)
 	{
 		Settings = settings;
-		_indexerUri = settings.IndexerUri;
 
 		if (settings.Network == Network.Main)
 		{
@@ -44,9 +43,6 @@ public partial class ConnectionsSettingsTabViewModel : RoutableViewModel
 		}
 
 		this.ValidateProperty(x => x.IndexerUri, ValidateIndexerUri);
-
-		this.WhenAnyValue(x => x.Settings.IndexerUri)
-			.Subscribe(x => IndexerUri = x);
 	}
 
 	public bool IsReadOnly => Settings.IsOverridden;
@@ -74,7 +70,5 @@ public partial class ConnectionsSettingsTabViewModel : RoutableViewModel
 			errors.Add(ErrorSeverity.Error, "Invalid URI.");
 			return;
 		}
-
-		Settings.IndexerUri = indexerUri;
 	}
 }

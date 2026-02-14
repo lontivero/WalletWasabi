@@ -37,7 +37,6 @@ public class BitcoinRpcFilterProvider(IRPCClient bitcoinRpcClient) : ICompactFil
 {
 	public async Task<FilterFetchingResult> GetFiltersAsync(uint256 fromHash, uint fromHeight, CancellationToken cancellationToken)
 	{
-		Task<uint256>[] blockHashTasks = [];
 		try
 		{
 			var filters = new List<FilterModel>();
@@ -55,7 +54,7 @@ public class BitcoinRpcFilterProvider(IRPCClient bitcoinRpcClient) : ICompactFil
 			var heights = Enumerable.Range((int) fromHeight + 1, (int) (stopAtHeight - fromHeight)).ToArray();
 
 			var batchClient = bitcoinRpcClient.PrepareBatch();
-			blockHashTasks = heights.Select(h => batchClient.GetBlockHashAsync(h, cancellationToken)).ToArray();
+			var blockHashTasks = heights.Select(h => batchClient.GetBlockHashAsync(h, cancellationToken)).ToArray();
 			await batchClient.SendBatchAsync(cancellationToken).ConfigureAwait(false);
 
 			var blockHashes = await Task.WhenAll(blockHashTasks).ConfigureAwait(false);

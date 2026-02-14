@@ -195,7 +195,7 @@ public class WasabiApplication
 
 	private PersistentConfig UpdateFrom260To280(PersistentConfig_2_6_0 config)
 	{
-		bool MustMigrate(PersistentConfig_2_6_0 cfg) =>
+		static bool MustMigrate(PersistentConfig_2_6_0 cfg) =>
 			cfg.UseBitcoinRpc is false && !Uri.IsWellFormedUriString(cfg.BitcoinRpcUri, UriKind.Absolute);
 
 		var oldConfig = config;
@@ -230,7 +230,7 @@ public class WasabiApplication
 
 	private (PersistentConfig MainNet, PersistentConfig TestNet, PersistentConfig RegTest) UpdateFrom260To280((PersistentConfig_2_6_0 MainNet, PersistentConfig_2_6_0 TestNet, PersistentConfig_2_6_0 RegTest) configs260)
 	{
-		bool MustMigrate(PersistentConfig_2_6_0 cfg) =>
+		static bool MustMigrate(PersistentConfig_2_6_0 cfg) =>
 			cfg.UseBitcoinRpc is false && !Uri.IsWellFormedUriString(cfg.BitcoinRpcUri, UriKind.Absolute);
 
 		var oldConfig = configs260.MainNet;

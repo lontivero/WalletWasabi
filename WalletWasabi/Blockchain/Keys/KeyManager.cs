@@ -474,12 +474,9 @@ public class KeyManager
 	{
 		lock (_criticalStateLock)
 		{
-			return _hdPubKeyCache.Select(x => GetScriptPubKeyBytes(x));
+			return _hdPubKeyCache.Select(x => x.ScriptPubKeyBytes);
 		}
-
-		byte[] GetScriptPubKeyBytes(HdPubKeyInfo hdPubKeyInfo) =>
-			hdPubKeyInfo.ScriptPubKeyBytes;
- 	}
+	}
 
 	public bool TryGetKeyForScriptPubKey(Script scriptPubKey, [NotNullWhen(true)] out HdPubKey? hdPubKey)
 	{

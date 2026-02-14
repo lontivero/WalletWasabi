@@ -27,23 +27,9 @@ public class RegTestFixture : IDisposable
 
 		var walletName = "wallet";
 		IndexerRegTestNode.RpcClient.CreateWalletAsync(walletName).GetAwaiter().GetResult();
-
-		Logger.LogInfo($"Started Indexer webhost: {IndexerEndPoint}");
-
-		// Wait for server to initialize
-		var delayTask = Task.Delay(3000);
 	}
 
-	/// <summary>String representation of indexer URI: <c>http://localhost:RANDOM_PORT</c>.</summary>
-	public string IndexerEndPoint { get; }
-
-	/// <summary>URI in form: <c>http://localhost:RANDOM_PORT</c>.</summary>
-	public Uri IndexerEndPointUri { get; }
-
-	public IHost IndexerHost { get; }
 	public CoreNode IndexerRegTestNode { get; }
-
-	public IHttpClientFactory IndexerHttpClientFactory { get; }
 
 	protected virtual void Dispose(bool disposing)
 	{
@@ -51,8 +37,6 @@ public class RegTestFixture : IDisposable
 		{
 			if (disposing)
 			{
-				IndexerHost.StopAsync().GetAwaiter().GetResult();
-				IndexerHost.Dispose();
 				IndexerRegTestNode.TryStopAsync().GetAwaiter().GetResult();
 			}
 
@@ -60,10 +44,8 @@ public class RegTestFixture : IDisposable
 		}
 	}
 
-	// This code added to correctly implement the disposable pattern.
 	public void Dispose()
 	{
-		// Do not change this code. Put cleanup code in Dispose(bool disposing) above.
 		Dispose(true);
 	}
 }

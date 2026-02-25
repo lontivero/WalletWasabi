@@ -289,10 +289,10 @@ public class BlockFilterSqliteStorage : IDisposable
 				INSERT INTO filter (block_height, block_hash, filter_data, previous_block_hash, epoch_block_time)
 				VALUES ($block_height, $block_hash, $filter_data, $previous_block_hash, $epoch_block_time)
 				""";
-			insertCommand.Parameters.AddWithValue("$block_height", filter.Header.Height);
+			insertCommand.Parameters.AddWithValue("$block_height", filter.Header.Height.Height);
 			insertCommand.Parameters.AddWithValue("$block_hash", filter.Header.BlockHash.ToBytes(lendian: true));
 			insertCommand.Parameters.AddWithValue("$filter_data", filter.FilterData);
-			insertCommand.Parameters.AddWithValue("$previous_block_hash", filter.Header.HeaderOrPrevBlockHash.ToBytes(lendian: true));
+			insertCommand.Parameters.AddWithValue("$previous_block_hash", filter.Header.BlockFilterHeader.ToBytes(lendian: true));
 			insertCommand.Parameters.AddWithValue("$epoch_block_time", filter.Header.EpochBlockTime);
 			int result = insertCommand.ExecuteNonQuery();
 

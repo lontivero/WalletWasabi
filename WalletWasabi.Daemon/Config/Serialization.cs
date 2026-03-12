@@ -40,7 +40,7 @@ public static class PersistentConfigEncode
 			("AbsoluteMinInputCount", Int(cfg.AbsoluteMinInputCount)),
 			("MaxDaysInMempool", Int(cfg.MaxDaysInMempool)),
 			("ExperimentalFeatures", Array(cfg.ExperimentalFeatures.Select(String))),
-			("ConfigVersion", Int(3))
+			("ConfigVersion", Int(4))
 		]);
 }
 
@@ -63,7 +63,7 @@ public static class PersistentConfigDecode
 		Object(get =>
 		{
 			var ver = get.Required("ConfigVersion", Decode.Int);
-			if (ver == 3)
+			if (ver == 4)
 			{
 				return new PersistentConfig(
 					Network: Network.Main, // Network is not part of the config

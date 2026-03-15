@@ -112,8 +112,6 @@ public class CancelTests : IClassFixture<RegTestFixture>
 			var externalAddr = await rpc.GetNewAddressAsync(CancellationToken.None);
 			var txToCancel = wallet.BuildTransaction(password, new PaymentIntent(externalAddr, amountToSend, label: "bar"), FeeStrategy.SevenDaysConfirmationTargetStrategy, allowUnconfirmed: true);
 
-			SetHighInputAnonsets(txToCancel);
-
 			TransactionBroadcaster broadcaster = new([new RpcBroadcaster(rpc)], bitcoinStore.MempoolService, walletManager);
 			await broadcaster.SendTransactionAsync(txToCancel.Transaction);
 
@@ -173,8 +171,6 @@ public class CancelTests : IClassFixture<RegTestFixture>
 
 			externalAddr = await rpc.GetNewAddressAsync(CancellationToken.None);
 			txToCancel = wallet.BuildChangelessTransaction(externalAddr, "foo", new FeeRate(1m), cancellingTx.InnerWalletOutputs);
-
-			SetHighInputAnonsets(txToCancel);
 
 			await broadcaster.SendTransactionAsync(txToCancel.Transaction);
 
@@ -329,14 +325,6 @@ public class CancelTests : IClassFixture<RegTestFixture>
 		foreach (var output in txToCancel.InnerWalletOutputs)
 		{
 			Assert.Equal(1, output.AnonymitySet);
-		}
-	}
-
-	private static void SetHighInputAnonsets(BuildTransactionResult tx)
-	{
-		foreach (var input in tx.SpentCoins)
-		{
-			input.HdPubKey.SetAnonymitySet(999);
 		}
 	}
 }

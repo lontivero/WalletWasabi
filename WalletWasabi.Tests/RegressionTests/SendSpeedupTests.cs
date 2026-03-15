@@ -390,12 +390,6 @@ public class SendSpeedupTests : IClassFixture<RegTestFixture>
 			txToSpeedUp = wallet.BuildTransaction(password, new PaymentIntent(rpcAddress, MoneyRequest.Create(activeAmount - changeAmount, subtractFee: true), label: "bar"), FeeStrategy.CreateFromFeeRate(10), allowedInputs: fundingTx!.GetWalletOutputs(keyManager).Select(x => x.Outpoint));
 			await broadcaster.SendTransactionAsync(txToSpeedUp.Transaction);
 
-			// Make sure we can spend the coins together by giving them a high anonset.
-			foreach (var c in wallet.Coins)
-			{
-				c.HdPubKey.SetAnonymitySet(9_000);
-			}
-
 			var cpfp = await wallet.SpeedUpTransactionAsync(txToSpeedUp.Transaction, null, CancellationToken.None);
 
 			Assert.False(txToSpeedUp.Transaction.IsCPFP);

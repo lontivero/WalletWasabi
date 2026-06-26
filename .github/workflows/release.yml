@@ -58,6 +58,10 @@ jobs:
       run: |
         set -x
         ./Contrib/release.sh wininstaller
+      env:
+        AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+        AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+        AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
 
     - name: Upload windows installer
       uses: actions/upload-artifact@v4

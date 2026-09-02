@@ -38,8 +38,11 @@ public sealed record PeerInfo
 
 	public double Score { get; init; }
 
-	private double ComputeScore() =>
-		(SupportsCompactFilters ? 30 : 0) +
-		(SupportsFullBlocks ? 20 : -10) +
-		(SupportsWitness ? 5 : 0);
+	private double ComputeScore()
+	{
+		var probeScore = Math.Min(50, SuccessfulProbes * 5);
+		var failurePenalty = Math.Min(30, FailedProbes * 10);
+		var latencyPenalty = Math.Min(20, Math.Max(0, (ConnectionTime.TotalSeconds - 2) * 4));
+		return probeScore - failurePenalty - latencyPenalty;
+	}
 }

@@ -4,6 +4,7 @@ using NBitcoin.Protocol.Behaviors;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Data.SqlTypes;
 using System.Diagnostics;
 using System.Linq;
 using System.Net;
@@ -78,6 +79,7 @@ public class P2pConnectionManager : IDisposable
 	private const int MinCompactFilterNodes = 5;
 	private const double RotationScoreThreshold = 1.1;
 	private const int DefaultCrawlerCount = 10;
+	private const int MaxPeersPerNetgroup = 3;
 
 	private static readonly TimeSpan ReconnectCooldown = TimeSpan.FromMinutes(5);
 	private static readonly TimeSpan QuickDisconnectThreshold = TimeSpan.FromSeconds(30);
@@ -374,12 +376,57 @@ public class P2pConnectionManager : IDisposable
 			.Select(kvp => kvp.Key)
 			.ToHashSet();
 
+		// Track netgroup counts for connected nodes
+		var netgroupCounts = _connectedNodes.Values
+			.GroupBy(n => GetNetgroup(n.PeerInfo.Endpoint))
+			.ToDictionary(g => g.Key, g => g.Count());
+
 		var peers = await GetPeersAsync(cancellationToken).ConfigureAwait(false);
 		var availablePeers = peers.Where(p => IsAvailable(p.Endpoint)).ToArray();
 		return availablePeers;
 
 		bool IsAvailable(EndPoint endpoint) =>
-			!connectedKeys.Contains(endpoint) && !cooldownEndpoints.Contains(endpoint);
+			!connectedKeys.Contains(endpoint) &&
+			!cooldownEndpoints.Contains(endpoint) &&
+			IsNetgroupAvailable(endpoint);
+
+		bool IsNetgroupAvailable(EndPoint endpoint) =>
+			netgroupCounts.GetValueOrDefault(GetNetgroup(endpoint), 0) < MaxPeersPerNetgroup;
+	}
+
+	private static string GetNetgroup(EndPoint endpoint)
+	{
+		if (endpoint is IPEndPoint ipEp)
+		{
+			var ip = ipEp.Address;
+
+			if (ip.IsIPv4MappedToIPv6)
+			{
+				ip = ip.MapToIPv4();
+			}
+
+			if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork)
+			{
+				var b = ip.GetAddressBytes();
+				return $"v4:{Convert.ToHexString(b.AsSpan(0,2))}"; // /16 fallback. Bitcoin Core uses an AS map instead
+			}
+
+			if (ip.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
+			{
+				var b = ip.GetAddressBytes(); // 16 bytes
+				return $"v6:{Convert.ToHexString(b.AsSpan(0, 4))}";
+			}
+		}
+
+		if (endpoint is DnsEndPoint dns && IsOnionHost(dns.Host))
+		{
+			return "onion:*";
+		}
+
+		return $"other:{endpoint.GetType().Name}";
+
+		static bool IsOnionHost(string host) =>
+			host.EndsWith(".onion", StringComparison.OrdinalIgnoreCase);
 	}
 
 	private async Task ConnectToPeerAsync(PeerInfo peerInfo, CancellationToken cancellationToken)
@@ -639,13 +686,12 @@ public class P2pConnectionManager : IDisposable
 			case NodeMisbehaveMessage(Endpoint: var offendingEndpoint, Behavior: var behavior):
 				if (state.Peers.TryGetValue(offendingEndpoint, out var offendingNode))
 				{
+					// Always punish first, only remove after sustained failures (score <= -20).
+					// This prevents attackers from getting honest peers removed by causing
+					// disputes over unverified data (e.g., filter mismatches).
 					state = behavior switch
 					{
-						MisbehaviorType.TimedOutDownloadingBlock when offendingNode.Score > 30 =>
-							Punish(offendingEndpoint, offendingNode, behavior),
-						MisbehaviorType.DisconnectedQuickly when offendingNode.Score > 30 =>
-							Punish(offendingEndpoint, offendingNode, behavior),
-						MisbehaviorType.FailedToConnect when offendingNode.Score > 30 =>
+						_ when offendingNode.Score > -20 =>
 							Punish(offendingEndpoint, offendingNode, behavior),
 						_ =>
 							Remove(offendingEndpoint)
@@ -726,6 +772,16 @@ public class P2pConnectionManager : IDisposable
 		else if (endpoint.IsTor())
 		{
 			// Cannot connect to .onion endpoint without Tor
+			return null;
+		}
+
+		if (!endpoint.IsValid() || endpoint.IsI2P())
+		{
+			return null;
+		}
+
+		if (endpoint is IPEndPoint {Address: var ip} && ip.IsCjdns())
+		{
 			return null;
 		}
 
